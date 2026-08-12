@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  base: '/attendance-system/',
   plugins: [
     react(),
     VitePWA({
@@ -16,17 +17,17 @@ export default defineConfig({
         background_color: '#4f46e5',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: '/attendance-system/',
+        scope: '/attendance-system/',
         icons: [
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/attendance-system/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/attendance-system/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/attendance-system/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
-        navigateFallback: '/index.html',
+        navigateFallback: '/attendance-system/index.html',
       },
     }),
   ],

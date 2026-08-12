@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useApp } from './state/AppContext.jsx';
 import Layout from './components/Layout.jsx';
 import Toasts from './components/Toasts.jsx';
@@ -41,7 +41,7 @@ function Gate({ children }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <OnlineWatcher />
       <Toasts />
       <Routes>
@@ -73,6 +73,6 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
