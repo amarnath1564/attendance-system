@@ -1,0 +1,210 @@
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import db, { STUDENT_STATUS } from '../db/db.js';
+import {
+  deleteClass,
+  discardSession,
+  getInProgressSession,
+  getSessionsForClass,
+  getStudentsForClass,
+} from '../db/repositories.js';
+import { formatDate } from '../lib/utils.js';
+import { useApp } from '../state/AppContext.jsx';
+import Dropdown from '../components/Dropdown.jsx';
+import { EmptyState } from '../components/ui.jsx';
+import { Confirm } from '../components/Modal.jsx';
+import { Icons, Icon } from '../components/icons.jsx';
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+function ClassCard({ klass, navigate, onDelete }) {
+  const students = useLiveQuery(() => getStudentsForClass(klass.id, { includeInactive: true }), [klass.id]);
+  const activeCount = useMemo(
+    () => (students || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE).length,
+    [students]
+  );
+  const sessions = useLiveQuery(() => getSessionsForClass(klass.id), [klass.id]);
+  const inProgress = useLiveQuery(() => getInProgressSession(klass.id), [klass.id]);
+
+  const lastSession = sessions && sessions.length ? sessions[sessions.length - 1] : null;
+
+  const menu = [
+    { label: 'Manage Students', icon: Icons.users, onClick: () => navigate(`/classes/${klass.id}`) },
+    { label: 'Attendance History', icon: Icons.history, onClick: () => navigate(`/classes/${klass.id}/history`) },
+    { divider: true },
+    { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
+    { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
+  ];
+
+  return (
+    <div className="card fade-in flex flex-col p-5 transition hover:shadow-lift">
+      <div className="flex items-start justify-between gap-2">
+        <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 text-left">
+          <h3 className="truncate text-lg font-bold text-slate-900">{klass.class_name}</h3>
+          {klass.section && <p className="text-sm font-medium text-slate-500">{klass.section}</p>}
+        </button>
+        <Dropdown items={menu} />
+      </div>
+
+      <div className="mt-3 flex items-center gap-1.5 text-sm text-slate-600">
+        <Icon d={Icons.users} className="h-4 w-4 text-slate-400" />
+        {activeCount} student{activeCount === 1 ? '' : 's'}
+      </div>
+
+      <div className="mt-1.5 text-sm text-slate-500">
+        {lastSession ? (
+          <span>
+            Last attendance:{' '}
+            <span className="font-semibold text-slate-700">{formatDate(new Date(lastSession.date))}</span>
+          </span>
+        ) : (
+          <span className="text-slate-400">No attendance yet</span>
+        )}
+      </div>
+
+      <button className="btn-primary mt-4 w-full" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
+        {inProgress ? 'Continue Attendance' : 'Take Attendance'}
+      </button>
+    </div>
+  );
+}
+
+function UnfinishedCard({ klass, session, records, total }) {
+  const { pushToast } = useApp();
+  const navigate = useNavigate();
+  const done = records ? Object.keys(records).length : 0;
+
+  const discard = async () => {
+    await discardSession(session.id);
+    pushToast({ type: 'info', title: 'Session discarded', message: 'The unfinished attendance was removed.' });
+  };
+
+  return (
+    <div className="card flex flex-col gap-3 border-amber-200 bg-amber-50/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <p className="flex items-center gap-2 text-sm font-bold text-amber-900">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+          Unfinished attendance
+        </p>
+        <p className="mt-0.5 text-sm text-amber-800">
+          {klass.class_name}
+          {klass.section ? ` · ${klass.section}` : ''} — {done} / {total} students
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <button className="btn-secondary" onClick={discard}>
+          Discard
+        </button>
+        <button className="btn-primary" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const { teacher, pushToast } = useApp();
+  const navigate = useNavigate();
+  const classes = useLiveQuery(() => db.classes.orderBy('created_at').reverse().toArray(), []);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+  const unfinished = useLiveQuery(async () => {
+    if (!classes || classes.length === 0) return [];
+    const out = [];
+    for (const c of classes) {
+      const session = await getInProgressSession(c.id);
+      if (session) {
+        const students = await getStudentsForClass(c.id, { includeInactive: false });
+        const records = await db.attendance_records.where('attendance_session_id').equals(session.id).toArray();
+        out.push({ klass: c, session, records, total: students.length });
+      }
+    }
+    return out;
+  }, [classes]);
+
+  return (
+    <div className="mx-auto max-w-6xl px-4">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            {greeting()}, Professor {teacher?.name?.split(' ')[0] || '…'}
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">{today}</p>
+        </div>
+      </div>
+
+      {unfinished && unfinished.length > 0 && (
+        <div className="mb-6 space-y-3">
+          {unfinished.map(({ klass, session, records, total }) => (
+            <UnfinishedCard
+              key={session.id}
+              klass={klass}
+              session={session}
+              records={records}
+              total={total}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-slate-900">My Classes</h2>
+        <span className="text-sm text-slate-500">
+          {classes?.length || 0} class{(classes || []).length === 1 ? '' : 'es'}
+        </span>
+      </div>
+
+      {classes && classes.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {classes.map((klass) => (
+            <ClassCard key={klass.id} klass={klass} navigate={navigate} onDelete={setConfirmDelete} />
+          ))}
+          <Link
+            to="/classes/new"
+            className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white/40 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/40"
+          >
+            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+              <Icon d={Icons.plus} className="h-6 w-6" />
+            </span>
+            <span className="text-sm font-bold text-brand-700">Add Class</span>
+            <span className="mt-1 text-xs text-slate-500">Create a class and import your students</span>
+          </Link>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Icons.users}
+          title="No classes yet"
+          message="Create your first class, then take attendance — completely offline."
+          action={
+            <Link to="/classes/new" className="btn-primary">
+              <Icon d={Icons.plus} className="h-4 w-4" /> Add Class
+            </Link>
+          }
+        />
+      )}
+
+      <Confirm
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={async () => {
+          if (!confirmDelete) return;
+          await deleteClass(confirmDelete.id);
+          pushToast({ type: 'info', title: 'Class deleted', message: `${confirmDelete.class_name} and its data were removed.` });
+        }}
+        title="Delete class?"
+        message={`This permanently removes "${confirmDelete?.class_name}" including students and attendance history. Consider exporting a backup first.`}
+        confirmLabel="Delete Class"
+        danger
+      />
+    </div>
+  );
+}

@@ -1,0 +1,193 @@
+import { useEffect, useRef, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import db from '../db/db.js';
+import {
+  getTeacher,
+  updateTeacher,
+} from '../db/repositories.js';
+import { exportBackup, downloadBackup, importBackup } from '../lib/backup.js';
+import { useApp } from '../state/AppContext.jsx';
+import InstallApp from '../components/InstallApp.jsx';
+import { PageHeader } from '../components/ui.jsx';
+import Modal, { Confirm } from '../components/Modal.jsx';
+import { Icons, Icon } from '../components/icons.jsx';
+
+function Section({ title, subtitle, children }) {
+  return (
+    <section className="card p-5">
+      <h2 className="text-base font-bold text-slate-900">{title}</h2>
+      {subtitle && <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+export default function Settings() {
+  const { pushToast } = useApp();
+  const teacher = useLiveQuery(() => getTeacher(), []);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [clearOpen, setClearOpen] = useState(false);
+  const fileRef = useRef(null);
+
+  useEffect(() => {
+    if (teacher) {
+      setName(teacher.name || '');
+      setEmail(teacher.email || '');
+    }
+  }, [teacher]);
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8">
+      <PageHeader title="Settings" subtitle="Your teacher profile and local data." />
+
+      <div className="space-y-5">
+        <Section title="Teacher Profile" subtitle="Stored only on this device.">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label" htmlFor="set-name">Teacher Name</label>
+              <input id="set-name" className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div>
+              <label className="label" htmlFor="set-email">Email (optional)</label>
+              <input id="set-email" className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              className="btn-primary"
+              disabled={savingProfile || !name.trim()}
+              onClick={async () => {
+                setSavingProfile(true);
+                try {
+                  await updateTeacher({ name, email });
+                  pushToast({ type: 'success', title: 'Profile updated' });
+                } catch (err) {
+                  pushToast({ type: 'error', title: 'Could not save', message: err.message });
+                } finally {
+                  setSavingProfile(false);
+                }
+              }}
+            >
+              {savingProfile ? 'Saving…' : 'Save Profile'}
+            </button>
+          </div>
+        </Section>
+
+        <Section title="Local Data" subtitle="Your data lives in this browser. Back it up regularly.">
+          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <p className="flex items-start gap-2 font-medium">
+              <Icon d={Icons.warning} className="mt-0.5 h-4 w-4 shrink-0" />
+              Your attendance data is stored locally. Export a backup regularly to avoid losing data if this
+              browser/device is reset. Backups are never uploaded anywhere.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="btn-primary"
+              onClick={async () => {
+                const backup = await exportBackup();
+                downloadBackup(backup);
+                pushToast({ type: 'success', title: 'Backup exported', message: 'Downloaded a local backup file.' });
+              }}
+            >
+              <Icon d={Icons.download} className="h-4 w-4" /> Export Local Data
+            </button>
+            <button className="btn-secondary" onClick={() => fileRef.current?.click()}>
+              <Icon d={Icons.upload} className="h-4 w-4" /> Import Local Data
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  try {
+                    const data = JSON.parse(String(reader.result || ''));
+                    setImportError('');
+                    setImportOpen(data);
+                  } catch {
+                    setImportError('This file is not valid JSON.');
+                    setImportOpen(null);
+                  }
+                };
+                reader.readAsText(f);
+              }}
+            />
+          </div>
+          <div className="mt-5 border-t border-slate-100 pt-5">
+            <button className="btn-danger" onClick={() => setClearOpen(true)}>
+              <Icon d={Icons.trash} className="h-4 w-4" /> Clear All Local Data
+            </button>
+          </div>
+        </Section>
+
+        <InstallApp />
+
+        <Section title="Privacy" subtitle="What happens with your data.">
+          <ul className="space-y-2 text-sm text-slate-600">
+            <li className="flex items-start gap-2">
+              <Icon d={Icons.lock} className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              Teacher profile, classes, students and attendance are stored in this browser only (IndexedDB).
+            </li>
+            <li className="flex items-start gap-2">
+              <Icon d={Icons.info} className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              Everything stays on this device. No account is required, and no data is ever sent to any server.
+            </li>
+          </ul>
+        </Section>
+      </div>
+
+      <Modal open={!!importOpen} onClose={() => setImportOpen(null)} title="Import Local Data" size="sm">
+        <p className="text-sm leading-6 text-slate-600">
+          Importing will merge the backup into this browser. Records with the same ID are replaced; everything else is
+          added. Use this to restore your data on a new computer.
+        </p>
+        {importError && <p className="mt-3 rounded-xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{importError}</p>}
+        <div className="mt-6 flex justify-end gap-2">
+          <button className="btn-secondary" onClick={() => setImportOpen(null)}>Cancel</button>
+          <button
+            className="btn-primary"
+            onClick={async () => {
+              try {
+                await importBackup(importOpen);
+                setImportOpen(null);
+                pushToast({ type: 'success', title: 'Data imported', message: 'Your backup was restored.' });
+              } catch (err) {
+                setImportError(err.message);
+              }
+            }}
+          >
+            Import Data
+          </button>
+        </div>
+      </Modal>
+
+      <Confirm
+        open={clearOpen}
+        onClose={() => setClearOpen(false)}
+        onConfirm={async () => {
+          await Promise.all(
+            ['teachers', 'classes', 'students', 'attendance_sessions', 'attendance_records', 'settings'].map((t) =>
+              db.table(t).clear()
+            )
+          );
+          pushToast({ type: 'info', title: 'All data cleared', message: 'You can set up your profile again.' });
+          window.location.reload();
+        }}
+        title="Clear all local data?"
+        message="This permanently deletes your profile, classes, students and attendance from this browser. Export a backup first if you want to keep it."
+        confirmLabel="Clear Everything"
+        danger
+      />
+    </div>
+  );
+}
