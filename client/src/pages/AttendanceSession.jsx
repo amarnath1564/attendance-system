@@ -40,6 +40,7 @@ export default function AttendanceSession() {
   const [index, setIndex] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [replaceWarn, setReplaceWarn] = useState(false);
+  const [presentationMode, setPresentationMode] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
 
@@ -106,8 +107,31 @@ export default function AttendanceSession() {
   };
 
   useEffect(() => {
+    document.body.classList.toggle('presentation-mode', presentationMode);
+    if (presentationMode && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    if (!presentationMode && document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+    return () => {
+      document.body.classList.remove('presentation-mode');
+      if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+    };
+  }, [presentationMode]);
+
+  useEffect(() => {
     const onKey = (e) => {
-      if (e.target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      const target = e.target;
+      const isTyping =
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable);
+      if (isTyping) return;
       if (e.key === 'ArrowRight' || e.key === 'Enter') {
         e.preventDefault();
         mark(RECORD_STATUS.PRESENT);
@@ -120,13 +144,66 @@ export default function AttendanceSession() {
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         goPrevious();
+      } else if (presentationMode && e.key === 'Escape') {
+        e.preventDefault();
+        setPresentationMode(false);
       }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  });
+  }, [presentationMode]);
 
   if (!students || !session || !records) return null;
+
+  if (presentationMode) {
+    return (
+      <div className="fixed inset-0 z-40 bg-slate-950 text-white">
+        <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
+          <p className="text-xs font-bold uppercase tracking-[0.4em] text-slate-400">{klass?.class_name}</p>
+          {klass?.section && <p className="mt-2 text-sm font-semibold text-slate-300">{klass.section}</p>}
+          <div className="mt-6 text-5xl font-black tracking-tight text-white sm:text-7xl">{current?.application_number || '—'}</div>
+          <div className="mt-8 text-4xl font-black leading-tight sm:text-6xl">{current?.name}</div>
+          <div className="mt-3 text-lg font-semibold text-slate-300">{current?.roll_number || '—'}</div>
+
+          <div className="mt-8 flex items-center gap-4 text-2xl font-black">
+            <span className="text-slate-300">{presentCount}</span>
+            <span className="text-slate-500">/</span>
+            <span className="text-slate-300">{total}</span>
+          </div>
+
+          <div className="mt-8 h-1 w-40 overflow-hidden rounded-full bg-slate-800">
+            <div className="h-full rounded-full bg-brand-400" style={{ width: `${progressPct}%` }} />
+          </div>
+
+          <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-4 text-sm font-bold">
+            <div className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200">{presentCount} Present</div>
+            <div className="rounded-2xl border border-rose-700 bg-rose-900/40 px-4 py-3 text-rose-200">{absentCount} Absent</div>
+          </div>
+
+          <div className="mt-8 grid w-full max-w-lg grid-cols-2 gap-3 text-lg font-black sm:text-xl">
+            <button className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4 text-slate-100" onClick={() => mark(RECORD_STATUS.ABSENT)}>
+              Absent
+            </button>
+            <button className="rounded-2xl border border-emerald-600 bg-emerald-600 px-5 py-4 text-white" onClick={() => mark(RECORD_STATUS.PRESENT)}>
+              Present ✓
+            </button>
+          </div>
+
+          <div className="mt-8 flex items-center gap-4 text-sm text-slate-300">
+            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={undoLast} disabled={index === 0}>
+              ↶ Undo
+            </button>
+            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={goPrevious} disabled={index === 0}>
+              ← Previous
+            </button>
+            <button className="btn-primary" onClick={() => setPresentationMode(false)}>
+              Exit Presentation Mode
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (students.length === 0) {
     return (
@@ -173,6 +250,11 @@ export default function AttendanceSession() {
             <button className="btn-primary py-3 text-base" onClick={() => navigate(`/classes/${id}/review/${session.id}`)}>
               Review Attendance
             </button>
+            {absentCount > 0 && (
+              <button className="btn-secondary py-3 text-base" onClick={() => navigate(`/classes/${id}/review/${session.id}?mode=absent`)}>
+                Review Absent Students
+              </button>
+            )}
             <button className="btn-ghost" onClick={() => navigate(`/classes/${id}`)}>
               Back to Class
             </button>
@@ -246,9 +328,16 @@ export default function AttendanceSession() {
               Next ✓
             </button>
           </div>
-          <p className="mt-3 text-center text-xs text-slate-500">
-            Next = Present · Keyboard: →/Enter present, ←/Space absent, Backspace undo
-          </p>
+
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Keyboard Shortcuts</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4">
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">→</span> Present</div>
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">←</span> Absent</div>
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">↑</span> Previous</div>
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">↶</span> Undo</div>
+            </div>
+          </div>
 
           <div className="mt-4 flex justify-center gap-3">
             <button className="btn-secondary px-6" onClick={goPrevious} disabled={index === 0}>
@@ -256,6 +345,9 @@ export default function AttendanceSession() {
             </button>
             <button className="btn-secondary px-6" onClick={undoLast} disabled={index === 0}>
               <Icon d={Icons.undo} className="h-4 w-4" /> Undo
+            </button>
+            <button className="btn-ghost px-6" onClick={() => setPresentationMode(true)}>
+              Presentation mode
             </button>
           </div>
         </div>

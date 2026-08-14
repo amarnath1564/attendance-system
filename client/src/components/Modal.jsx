@@ -47,16 +47,61 @@ export default function Modal({ open, onClose, title, children, size = 'md' }) {
   );
 }
 
-export function Confirm({ open, onClose, onConfirm, title, message, confirmLabel = 'Confirm', danger = false }) {
+export function Confirm({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmLabel = 'Confirm',
+  danger = false,
+  confirmCode = null,
+  userInput = '',
+  onInputChange = null,
+}) {
+  const requiresCode = !!confirmCode;
+  const codeMatches = userInput === confirmCode;
+
   return (
     <Modal open={open} onClose={onClose} title={title} size="sm">
       <p className="text-sm leading-6 text-slate-600">{message}</p>
+
+      {requiresCode && (
+        <div className="mt-6 space-y-4">
+          <div className="rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Type these numbers to confirm:</p>
+            <p className="mt-2 font-mono text-2xl font-black text-amber-900">{confirmCode}</p>
+          </div>
+          <div>
+            <label className="label text-sm" htmlFor="clear-confirm-input">
+              Confirmation Code
+            </label>
+            <input
+              id="clear-confirm-input"
+              type="text"
+              className="input font-mono text-lg tracking-wider"
+              placeholder="Enter the numbers above"
+              value={userInput}
+              onChange={(e) => onInputChange?.(e.target.value)}
+              autoComplete="off"
+            />
+            {userInput && !codeMatches && (
+              <p className="mt-2 text-xs font-medium text-rose-600">❌ Numbers don't match</p>
+            )}
+            {codeMatches && (
+              <p className="mt-2 text-xs font-medium text-emerald-600">✓ Verified — ready to delete</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 flex justify-end gap-2">
         <button className="btn-secondary" onClick={onClose}>
           Cancel
         </button>
         <button
           className={danger ? 'btn-danger' : 'btn-primary'}
+          disabled={requiresCode && !codeMatches}
           onClick={() => {
             onConfirm();
             onClose();

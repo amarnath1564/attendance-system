@@ -1,8 +1,9 @@
+import { useMemo, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { RECORD_STATUS } from '../db/db.js';
 import { getSessionsForClass } from '../db/repositories.js';
-import { fromDateKey, formatDate } from '../lib/utils.js';
+import { fromDateKey, formatDate, getMonthGrid } from '../lib/utils.js';
 import { BackLink, EmptyState, PageHeader } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
 
@@ -45,6 +46,7 @@ export default function AttendanceHistory() {
   const { id } = useParams();
   const klass = useLiveQuery(() => db.classes.get(id), [id]);
   const sessions = useLiveQuery(() => getSessionsForClass(id), [id]);
+  const [month, setMonth] = useState(new Date());
   const allRecords = useLiveQuery(
     async () => {
       if (!sessions || sessions.length === 0) return {};
@@ -60,32 +62,125 @@ export default function AttendanceHistory() {
     [sessions?.length]
   );
 
+  const rows = useMemo(() => {
+    return (sessions || []).map((s) => {
+      const recs = allRecords?.[s.id] || [];
+      return {
+        session: s,
+        counts: {
+          total: recs.length,
+          present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
+          absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
+        },
+      };
+    });
+  }, [sessions, allRecords]);
+
+  const sessionByDate = useMemo(() => {
+    const map = {};
+    for (const row of rows) {
+      map[row.session.date] = row;
+    }
+    return map;
+  }, [rows]);
+
+  const monthGrid = useMemo(() => getMonthGrid(month), [month]);
+  const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(month);
+
   if (!klass) return null;
 
-  const rows = (sessions || []).map((s) => {
-    const recs = allRecords?.[s.id] || [];
-    return {
-      session: s,
-      counts: {
-        total: recs.length,
-        present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
-      },
-    };
-  });
+  const selectedDate = rows.length ? rows[rows.length - 1].session.date : null;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-4">
         <BackLink to={`/classes/${id}`} label="Back to class" />
       </div>
       <PageHeader title="Attendance History" subtitle={klass.class_name} />
 
       {rows.length > 0 ? (
-        <div className="space-y-3">
-          {rows.map(({ session, counts }) => (
-            <SessionRow key={session.id} session={session} klass={klass} counts={counts} />
-          ))}
-        </div>
+        <>
+          <div className="card mb-6 p-4 sm:p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+                  Previous Month
+                </button>
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date())}>Today</button>
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+                  Next Month
+                </button>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-black text-slate-900">{monthLabel}</p>
+                <p className="text-xs text-slate-500">Local attendance records</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                <div key={day} className="py-2">{day}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1.5">
+              {monthGrid.cells.map((date) => {
+                const key = date.toISOString().slice(0, 10);
+                const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const hasSession = !!sessionByDate[dayKey];
+                const isCurrentMonth = date.getMonth() === month.getMonth();
+                const isToday = key === new Date().toISOString().slice(0, 10);
+                const session = sessionByDate[dayKey]?.session;
+                const counts = sessionByDate[dayKey]?.counts || { present: 0, absent: 0 };
+                return (
+                  <button
+                    key={`${dayKey}-cell`}
+                    onClick={() => session && navigate(`/classes/${id}/history/${session.id}`)}
+                    disabled={!session}
+                    className={[
+                      'relative flex min-h-[84px] flex-col rounded-xl border p-1.5 text-left transition',
+                      isCurrentMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 text-slate-400',
+                      isToday ? 'ring-2 ring-brand-300' : '',
+                      hasSession ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50',
+                    ].join(' ')}
+                  >
+                    <span className="text-xs font-bold">{date.getDate()}</span>
+                    {hasSession ? (
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700">
+                          <span>{counts.present}</span>
+                          <span>✓</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500">{counts.absent} absent</div>
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {selectedDate && sessionByDate[selectedDate] && (
+            <div className="card mb-6 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Selected Date</p>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xl font-black text-slate-900">{formatDate(fromDateKey(selectedDate))}</p>
+                  <p className="text-sm text-slate-500">{sessionByDate[selectedDate].counts.present} / {sessionByDate[selectedDate].counts.total} present</p>
+                </div>
+                <button className="btn-primary" onClick={() => navigate(`/classes/${id}/history/${sessionByDate[selectedDate].session.id}`)}>
+                  Open Session
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {rows.map(({ session, counts }) => (
+              <SessionRow key={session.id} session={session} klass={klass} counts={counts} />
+            ))}
+          </div>
+        </>
       ) : (
         <EmptyState
           icon={Icons.history}

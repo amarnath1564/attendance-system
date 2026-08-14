@@ -1,18 +1,21 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
-import db, { STUDENT_STATUS } from '../db/db.js';
+import db, { STUDENT_STATUS, RECORD_STATUS } from '../db/db.js';
 import {
   getStudentsForClass,
   addStudent,
   updateStudent,
   setStudentStatus,
+  getSessionsForClass,
 } from '../db/repositories.js';
 import { useApp } from '../state/AppContext.jsx';
 import { BackLink, StatusPill, PageHeader, EmptyState } from '../components/ui.jsx';
 import Modal, { Confirm } from '../components/Modal.jsx';
 import Dropdown from '../components/Dropdown.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
+import { DEFAULT_ATTENDANCE_THRESHOLD, clampThreshold, formatDate, getRiskLevel, getStudentAttendancePercentage } from '../lib/utils.js';
+import { buildAttendanceMatrixCsv, downloadCsv } from '../lib/attendanceCsv.js';
 
 function StudentForm({ open, onClose, student, classId, onSaved }) {
   const [app, setApp] = useState(student?.application_number || '');
@@ -106,6 +109,18 @@ export default function ClassDetail() {
 
   const klass = useLiveQuery(() => db.classes.get(id), [id]);
   const allStudents = useLiveQuery(() => getStudentsForClass(id, { includeInactive: true }), [id]);
+  const sessions = useLiveQuery(() => getSessionsForClass(id), [id]);
+  const attendanceRecords = useLiveQuery(async () => {
+    if (!sessions || sessions.length === 0) return {};
+    const ids = sessions.map((session) => session.id);
+    const records = await db.attendance_records.where('attendance_session_id').anyOf(ids).toArray();
+    const map = {};
+    for (const record of records) {
+      if (!map[record.attendance_session_id]) map[record.attendance_session_id] = [];
+      map[record.attendance_session_id].push(record);
+    }
+    return map;
+  }, [sessions]);
 
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(true);
@@ -113,10 +128,64 @@ export default function ClassDetail() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [removing, setRemoving] = useState(null);
 
+  const threshold = useMemo(() => clampThreshold(klass?.attendance_threshold ?? DEFAULT_ATTENDANCE_THRESHOLD), [klass]);
   const activeCount = useMemo(
     () => (allStudents || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE).length,
     [allStudents]
   );
+
+  const classStats = useMemo(() => {
+    const activeStudents = (allStudents || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE);
+    const completedSessions = (sessions || []).filter((session) => session.status === 'completed');
+
+    let lastSession = null;
+    let lastSessionDate = null;
+    let lastPresent = 0;
+    let lastAbsent = 0;
+
+    if (completedSessions.length > 0) {
+      lastSession = [...completedSessions].sort((a, b) => b.date.localeCompare(a.date))[0];
+      const sessionRecords = attendanceRecords?.[lastSession.id] || [];
+      lastPresent = sessionRecords.filter((record) => record.status === RECORD_STATUS.PRESENT).length;
+      lastAbsent = sessionRecords.filter((record) => record.status === RECORD_STATUS.ABSENT).length;
+      lastSessionDate = lastSession.date;
+    }
+
+    const percentages = activeStudents.map((student) => {
+      const recordsList = completedSessions
+        .map((session) => (attendanceRecords?.[session.id] || []).find((record) => record.student_id === student.id))
+        .filter(Boolean);
+      const total = recordsList.length;
+      const present = recordsList.filter((record) => record.status === RECORD_STATUS.PRESENT).length;
+      return {
+        student,
+        percentage: total ? (present / total) * 100 : 0,
+      };
+    });
+
+    const average = percentages.length
+      ? percentages.reduce((sum, item) => sum + item.percentage, 0) / percentages.length
+      : 0;
+
+    const summary = { safe: 0, atRisk: 0, critical: 0 };
+    for (const item of percentages) {
+      const risk = getRiskLevel(item.percentage, threshold);
+      if (risk.label === 'SAFE') summary.safe += 1;
+      else if (risk.label === 'AT RISK') summary.atRisk += 1;
+      else summary.critical += 1;
+    }
+
+    return {
+      lastSession,
+      lastSessionDate,
+      lastPresent,
+      lastAbsent,
+      average,
+      belowThreshold: percentages.filter((item) => item.percentage < threshold).length,
+      risk: summary,
+      percentages,
+    };
+  }, [allStudents, sessions, attendanceRecords, threshold]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -133,6 +202,22 @@ export default function ClassDetail() {
   }, [allStudents, search, showInactive]);
 
   if (!klass) return null;
+
+  const exportClassRoster = () => {
+    const rows = [['Application Number', 'Roll Number', 'Student Name', 'Email']];
+    for (const student of allStudents || []) {
+      if (student.status !== STUDENT_STATUS.ACTIVE) continue;
+      rows.push([student.application_number, student.roll_number, student.name, student.email]);
+    }
+    downloadCsv(`${(klass.class_name || 'class').replace(/\s+/g, '-').toLowerCase()}-roster.csv`, rows.map((row) => row.join(',')).join('\n'));
+    pushToast({ type: 'success', title: 'Roster exported', message: 'Downloaded a local CSV file.' });
+  };
+
+  const exportAttendanceCsv = () => {
+    const data = buildAttendanceMatrixCsv(klass, (allStudents || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE), sessions || [], attendanceRecords || {});
+    downloadCsv(data.filename, data.text);
+    pushToast({ type: 'success', title: 'Attendance exported', message: 'Downloaded a local CSV file.' });
+  };
 
   const afterSave = (kind) => {
     pushToast({
@@ -183,6 +268,96 @@ export default function ClassDetail() {
         <Link to={`/classes/${id}/history`} className="btn-secondary">
           <Icon d={Icons.history} className="h-4 w-4" /> Attendance History
         </Link>
+      </div>
+
+      <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+        <div className="card p-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Class Snapshot</p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Students</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{activeCount}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Attendance</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">{classStats.lastSessionDate ? formatDate(new Date(classStats.lastSessionDate.split('-').join('/'))) : '—'}</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Session</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                {classStats.lastSession ? `${classStats.lastPresent} Present · ${classStats.lastAbsent} Absent` : '—'}
+              </p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Average Attendance</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.average.toFixed(1)}%</p>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Below {threshold}%</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.belowThreshold}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button className="btn-primary" onClick={() => navigate(`/classes/${id}/attendance`)}>
+              <Icon d={Icons.clipboard} className="h-4 w-4" /> Take Attendance
+            </button>
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Attendance Risk</p>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              <span>✓ Safe</span>
+              <span className="font-black">{classStats.risk.safe}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <span>⚠ At Risk</span>
+              <span className="font-black">{classStats.risk.atRisk}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">
+              <span>● Critical</span>
+              <span className="font-black">{classStats.risk.critical}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Student Risk</p>
+          <span className="text-xs text-slate-500">Threshold: {threshold}%</span>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          {(allStudents || []).filter((student) => student.status === STUDENT_STATUS.ACTIVE).map((student) => {
+            const pct = classStats.percentages.find((item) => item.student.id === student.id)?.percentage ?? 0;
+            const risk = getRiskLevel(pct, threshold);
+            const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
+            return (
+              <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold text-slate-900">{student.name}</p>
+                  <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
+                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
+                    {risk.icon} {risk.label}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button className="btn-secondary" onClick={exportClassRoster}>
+          <Icon d={Icons.download} className="h-4 w-4" /> Export Student Roster
+        </button>
+        <button className="btn-secondary" onClick={exportAttendanceCsv}>
+          <Icon d={Icons.download} className="h-4 w-4" /> Export Attendance CSV
+        </button>
       </div>
 
       <div className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">

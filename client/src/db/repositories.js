@@ -41,11 +41,12 @@ export async function updateTeacher(partial) {
 }
 
 // ---------------------------------------------------------------- Classes
-export async function addClass({ class_name, section }) {
+export async function addClass({ class_name, section, attendance_threshold }) {
   const klass = {
     id: uid('cls'),
     class_name: class_name.trim(),
     section: (section || '').trim(),
+    attendance_threshold: Number.isFinite(Number(attendance_threshold)) ? Number(attendance_threshold) : 75,
     created_at: nowIso(),
     updated_at: nowIso(),
   };
@@ -56,7 +57,17 @@ export async function addClass({ class_name, section }) {
 export async function updateClass(id, partial) {
   const klass = await db.classes.get(id);
   if (!klass) return null;
-  const next = { ...klass, ...partial, updated_at: nowIso() };
+  const next = {
+    ...klass,
+    ...partial,
+    attendance_threshold:
+      partial.attendance_threshold !== undefined
+        ? Number.isFinite(Number(partial.attendance_threshold))
+          ? Number(partial.attendance_threshold)
+          : klass.attendance_threshold ?? 75
+        : klass.attendance_threshold ?? 75,
+    updated_at: nowIso(),
+  };
   await db.classes.put(next);
   return next;
 }

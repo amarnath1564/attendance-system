@@ -54,6 +54,7 @@ export default function ClassSetup() {
 
   const [name, setName] = useState('');
   const [section, setSection] = useState('');
+  const [threshold, setThreshold] = useState(75);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -62,6 +63,7 @@ export default function ClassSetup() {
     if (klass && !preview && !name) {
       setName(klass.class_name || '');
       setSection(klass.section || '');
+      setThreshold(klass.attendance_threshold ?? 75);
     }
   }, [klass, preview, name]);
 
@@ -73,10 +75,10 @@ export default function ClassSetup() {
     try {
       let classId = id;
       if (!classId) {
-        const created = await addClass({ class_name: name, section });
+        const created = await addClass({ class_name: name, section, attendance_threshold: threshold });
         classId = created.id;
       } else {
-        await updateClass(classId, { class_name: name, section });
+        await updateClass(classId, { class_name: name, section, attendance_threshold: threshold });
       }
       await bulkImportStudents(classId, students);
       pushToast({
@@ -130,10 +132,10 @@ export default function ClassSetup() {
     setBusy(true);
     try {
       if (editing) {
-        await updateClass(id, { class_name: name, section });
+        await updateClass(id, { class_name: name, section, attendance_threshold: threshold });
         navigate(`/classes/${id}`);
       } else {
-        const created = await addClass({ class_name: name, section });
+        const created = await addClass({ class_name: name, section, attendance_threshold: threshold });
         navigate(`/classes/${created.id}`);
       }
     } finally {
@@ -184,6 +186,22 @@ export default function ClassSetup() {
                 onChange={(e) => setSection(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="max-w-xs">
+            <label className="label" htmlFor="cls-threshold">
+              Attendance Risk Threshold (%)
+            </label>
+            <input
+              id="cls-threshold"
+              className="input"
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value={threshold}
+              onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+            />
           </div>
 
           {error && (

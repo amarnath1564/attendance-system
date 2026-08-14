@@ -1,3 +1,5 @@
+export const DEFAULT_ATTENDANCE_THRESHOLD = 75;
+
 export function uid(prefix = '') {
   const rnd =
     typeof crypto !== 'undefined' && crypto.randomUUID
@@ -58,4 +60,46 @@ export function formatDateLabel(dateKey) {
     month: 'short',
     day: 'numeric',
   }).format(fromDateKey(dateKey));
+}
+
+export function clampThreshold(value, fallback = DEFAULT_ATTENDANCE_THRESHOLD) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.min(100, Math.max(0, num));
+}
+
+export function getRiskLevel(value, threshold = DEFAULT_ATTENDANCE_THRESHOLD) {
+  const pct = Number(value) || 0;
+  if (pct >= threshold) return { label: 'SAFE', tone: 'emerald', icon: '✓' };
+  if (pct >= threshold - 5) return { label: 'AT RISK', tone: 'amber', icon: '⚠' };
+  return { label: 'CRITICAL', tone: 'rose', icon: '●' };
+}
+
+export function getStudentAttendancePercentage(studentId, sessions = [], recordsBySession = {}) {
+  const completed = (sessions || []).filter((session) => session && session.status === 'completed');
+  if (!completed.length) return 0;
+
+  let present = 0;
+  let total = 0;
+  for (const session of completed) {
+    const entry = recordsBySession?.[session.id]?.find((record) => record.student_id === studentId);
+    if (!entry) continue;
+    total += 1;
+    if (entry.status === 'present') present += 1;
+  }
+  return total ? (present / total) * 100 : 0;
+}
+
+export function getMonthGrid(date = new Date()) {
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const last = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const start = new Date(first);
+  start.setDate(start.getDate() - first.getDay());
+  const cells = [];
+  for (let i = 0; i < 42; i += 1) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    cells.push(d);
+  }
+  return { first, last, cells };
 }

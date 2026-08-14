@@ -32,6 +32,8 @@ export default function Settings() {
   const [importOpen, setImportOpen] = useState(false);
   const [importError, setImportError] = useState('');
   const [clearOpen, setClearOpen] = useState(false);
+  const [clearConfirmCode, setClearConfirmCode] = useState('');
+  const [clearUserInput, setClearUserInput] = useState('');
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -124,7 +126,15 @@ export default function Settings() {
             />
           </div>
           <div className="mt-5 border-t border-slate-100 pt-5">
-            <button className="btn-danger" onClick={() => setClearOpen(true)}>
+            <button
+              className="btn-danger"
+              onClick={() => {
+                const code = String(Math.floor(Math.random() * 9000) + 1000);
+                setClearConfirmCode(code);
+                setClearUserInput('');
+                setClearOpen(true);
+              }}
+            >
               <Icon d={Icons.trash} className="h-4 w-4" /> Clear All Local Data
             </button>
           </div>
@@ -173,18 +183,40 @@ export default function Settings() {
 
       <Confirm
         open={clearOpen}
-        onClose={() => setClearOpen(false)}
+        onClose={() => {
+          setClearOpen(false);
+          setClearConfirmCode('');
+          setClearUserInput('');
+        }}
         onConfirm={async () => {
-          await Promise.all(
-            ['teachers', 'classes', 'students', 'attendance_sessions', 'attendance_records', 'settings'].map((t) =>
-              db.table(t).clear()
-            )
-          );
-          pushToast({ type: 'info', title: 'All data cleared', message: 'You can set up your profile again.' });
-          window.location.reload();
+          try {
+            // 1. Create and download backup first
+            const backup = await exportBackup();
+            downloadBackup(backup);
+            pushToast({ type: 'success', title: 'Backup downloaded', message: 'Your data has been saved before deletion.' });
+            
+            // 2. Give time for download to start, then clear data
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 3. Clear all data
+            await Promise.all(
+              ['teachers', 'classes', 'students', 'attendance_sessions', 'attendance_records', 'settings'].map((t) =>
+                db.table(t).clear()
+              )
+            );
+            
+            // 4. Reload page
+            pushToast({ type: 'info', title: 'All data cleared', message: 'You can set up your profile again.' });
+            window.location.reload();
+          } catch (err) {
+            pushToast({ type: 'error', title: 'Error clearing data', message: err.message });
+          }
         }}
         title="Clear all local data?"
-        message="This permanently deletes your profile, classes, students and attendance from this browser. Export a backup first if you want to keep it."
+        message="This permanently deletes your profile, classes, students and attendance from this browser. A backup will be downloaded automatically before deletion."
+        confirmCode={clearConfirmCode}
+        userInput={clearUserInput}
+        onInputChange={setClearUserInput}
         confirmLabel="Clear Everything"
         danger
       />
