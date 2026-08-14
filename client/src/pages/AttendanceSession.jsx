@@ -41,6 +41,7 @@ export default function AttendanceSession() {
   const [initialized, setInitialized] = useState(false);
   const [replaceWarn, setReplaceWarn] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
+  const [actions, setActions] = useState([]);
   const lastMark = useRef(0);
   const creating = useRef(false);
   const onKeyRef = useRef(() => {});
@@ -85,8 +86,16 @@ export default function AttendanceSession() {
     const now = Date.now();
     if (now - lastMark.current < 250) return;
     lastMark.current = now;
+
+    if (records[current.id]) {
+      // Already marked — preserve the recorded status and just continue.
+      setIndex((i) => Math.min(i + 1, students.length - 1));
+      return;
+    }
+
     await upsertRecord(session.id, current.id, status);
-    setIndex((i) => i + 1);
+    setActions((a) => [...a, { studentId: current.id }]);
+    setIndex((i) => Math.min(i + 1, students.length - 1));
   };
 
   const goPrevious = () => {
@@ -94,16 +103,24 @@ export default function AttendanceSession() {
   };
 
   const undoLast = async () => {
-    if (index === 0) return;
-    const prev = students[index - 1];
-    if (!prev || !session) return;
-    await deleteRecordByStudent(session.id, prev.id);
-    setIndex((i) => i - 1);
+    if (!session || actions.length === 0) return;
+    const action = actions[actions.length - 1];
+    const student = students.find((s) => s.id === action.studentId);
+    await deleteRecordByStudent(session.id, action.studentId);
+    setActions((a) => a.slice(0, -1));
+    if (student) setIndex(students.indexOf(student));
+  };
+
+  const startPresentation = () => {
+    setPresentationMode(true);
+    const firstUnmarked = students.findIndex((s) => !records[s.id]);
+    if (firstUnmarked !== -1) setIndex(firstUnmarked);
   };
 
   const startNew = async () => {
     setReplaceWarn(false);
     setInitialized(false);
+    setActions([]);
     await createSession(id);
   };
 
@@ -122,6 +139,14 @@ export default function AttendanceSession() {
       }
     };
   }, [presentationMode]);
+
+  useEffect(() => {
+    const onFsChange = () => {
+      if (!document.fullscreenElement) setPresentationMode(false);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
 
   useEffect(() => {
     const onKey = (e) => {
@@ -159,41 +184,103 @@ export default function AttendanceSession() {
   if (!students || !session || !records) return null;
 
   if (presentationMode) {
+    if (markedCount >= total && total > 0) {
+      return (
+        <div className="fixed inset-0 z-40 bg-slate-950 text-white">
+          <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
+            <span className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+              <Icon d={Icons.checkCircle} className="h-10 w-10" />
+            </span>
+            <h1 className="mt-6 text-4xl font-black tracking-tight sm:text-6xl">Attendance complete</h1>
+            <p className="mt-3 text-lg font-semibold text-slate-300">All {total} students have been marked</p>
+
+            <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-4 text-xl font-black">
+              <div className="rounded-2xl border border-emerald-700 bg-emerald-900/40 px-4 py-4 text-emerald-200">
+                {presentCount} <span className="text-base font-bold text-emerald-400">Present</span>
+              </div>
+              <div className="rounded-2xl border border-rose-700 bg-rose-900/40 px-4 py-4 text-rose-200">
+                {absentCount} <span className="text-base font-bold text-rose-400">Absent</span>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <button className="btn-primary px-6 py-3 text-base" onClick={() => navigate(`/classes/${id}/review/${session.id}`)}>
+                Review Attendance
+              </button>
+              {absentCount > 0 && (
+                <button
+                  className="btn-secondary border-slate-600 bg-slate-900 px-6 py-3 text-base text-slate-100"
+                  onClick={() => navigate(`/classes/${id}/review/${session.id}?mode=absent`)}
+                >
+                  Review Absent Students
+                </button>
+              )}
+              <button className="btn-ghost px-6 py-3 text-base text-slate-300" onClick={() => navigate(`/classes/${id}`)}>
+                Back to Class
+              </button>
+            </div>
+
+            <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-slate-500">Esc exits presentation mode</p>
+          </div>
+        </div>
+      );
+    }
+
+    const alreadyMarked = records[current?.id];
     return (
       <div className="fixed inset-0 z-40 bg-slate-950 text-white">
         <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
           <p className="text-xs font-bold uppercase tracking-[0.4em] text-slate-400">{klass?.class_name}</p>
           {klass?.section && <p className="mt-2 text-sm font-semibold text-slate-300">{klass.section}</p>}
-          <div className="mt-6 text-5xl font-black tracking-tight text-white sm:text-7xl">{current?.application_number || '—'}</div>
-          <div className="mt-8 text-4xl font-black leading-tight sm:text-6xl">{current?.name}</div>
-          <div className="mt-3 text-lg font-semibold text-slate-300">{current?.roll_number || '—'}</div>
+          {session?.date && (
+            <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-slate-500">{formatDateLabel(session.date)}</p>
+          )}
 
-          <div className="mt-8 flex items-center gap-4 text-2xl font-black">
-            <span className="text-slate-300">{presentCount}</span>
-            <span className="text-slate-500">/</span>
-            <span className="text-slate-300">{total}</span>
+          <div className="mt-10 text-6xl font-black tracking-tight text-white sm:text-8xl">{current?.application_number || '—'}</div>
+          <div className="mt-8 max-w-3xl text-4xl font-black leading-tight sm:text-6xl">{current?.name}</div>
+          <div className="mt-3 text-lg font-semibold text-slate-300">Roll No: {current?.roll_number || '—'}</div>
+
+          {alreadyMarked ? (
+            <div className="mt-8 rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
+              Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next will just continue
+            </div>
+          ) : (
+            <div className="mt-8 rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
+              {index + 1} / {total} — waiting for mark
+            </div>
+          )}
+
+          <div className="mt-8 flex items-center gap-5 text-lg font-black">
+            <span className="text-emerald-400">{presentCount} <span className="font-bold text-emerald-600">Present</span></span>
+            <span className="text-slate-600">·</span>
+            <span className="text-rose-400">{absentCount} <span className="font-bold text-rose-700">Absent</span></span>
           </div>
 
-          <div className="mt-8 h-1 w-40 overflow-hidden rounded-full bg-slate-800">
-            <div className="h-full rounded-full bg-brand-400" style={{ width: `${progressPct}%` }} />
+          <div className="mt-6 h-2 w-72 overflow-hidden rounded-full bg-slate-800">
+            <div className="h-full rounded-full bg-brand-400 transition-all duration-300" style={{ width: `${progressPct}%` }} />
           </div>
 
-          <div className="mt-8 grid w-full max-w-md grid-cols-2 gap-4 text-sm font-bold">
-            <div className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-200">{presentCount} Present</div>
-            <div className="rounded-2xl border border-rose-700 bg-rose-900/40 px-4 py-3 text-rose-200">{absentCount} Absent</div>
-          </div>
-
-          <div className="mt-8 grid w-full max-w-lg grid-cols-2 gap-3 text-lg font-black sm:text-xl">
-            <button className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-4 text-slate-100" onClick={() => mark(RECORD_STATUS.ABSENT)}>
+          <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-4 text-xl font-black sm:text-2xl">
+            <button
+              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.ABSENT); }}
+              className="rounded-2xl border border-rose-700 bg-rose-900/40 px-5 py-4 text-rose-200 transition hover:bg-rose-900/70 active:bg-rose-900"
+            >
               Absent
             </button>
-            <button className="rounded-2xl border border-emerald-600 bg-emerald-600 px-5 py-4 text-white" onClick={() => mark(RECORD_STATUS.PRESENT)}>
+            <button
+              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
+              className="rounded-2xl bg-emerald-600 px-5 py-4 text-white transition hover:bg-emerald-500 active:bg-emerald-700"
+            >
               Present ✓
             </button>
           </div>
 
-          <div className="mt-8 flex items-center gap-4 text-sm text-slate-300">
-            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={undoLast} disabled={index === 0}>
+          <div className="mt-6 text-xs font-semibold uppercase tracking-widest text-slate-500">
+            → Present · A Absent · ← Back · Esc Exit
+          </div>
+
+          <div className="mt-8 flex items-center gap-4 text-sm">
+            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={undoLast} disabled={actions.length === 0}>
               ↶ Undo
             </button>
             <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={goPrevious} disabled={index === 0}>
@@ -345,10 +432,10 @@ export default function AttendanceSession() {
             <button className="btn-secondary px-6" onClick={goPrevious} disabled={index === 0}>
               <Icon d={Icons.arrowLeft} className="h-4 w-4" /> Previous
             </button>
-            <button className="btn-secondary px-6" onClick={undoLast} disabled={index === 0}>
+            <button className="btn-secondary px-6" onClick={undoLast} disabled={actions.length === 0}>
               <Icon d={Icons.undo} className="h-4 w-4" /> Undo
             </button>
-            <button className="btn-ghost px-6" onClick={() => setPresentationMode(true)}>
+            <button className="btn-ghost px-6" onClick={startPresentation}>
               Presentation mode
             </button>
           </div>
