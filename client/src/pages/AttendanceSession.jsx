@@ -43,6 +43,7 @@ export default function AttendanceSession() {
   const [presentationMode, setPresentationMode] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
+  const onKeyRef = useRef(() => {});
 
   useEffect(() => {
     if (session || creating.current) return;
@@ -146,9 +147,14 @@ export default function AttendanceSession() {
         setPresentationMode(false);
       }
     };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [presentationMode]);
+    onKeyRef.current = onKey;
+  });
+
+  useEffect(() => {
+    const listener = (e) => onKeyRef.current(e);
+    document.addEventListener('keydown', listener);
+    return () => document.removeEventListener('keydown', listener);
+  }, []);
 
   if (!students || !session || !records) return null;
 
