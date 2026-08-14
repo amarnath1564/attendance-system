@@ -20,9 +20,9 @@ export default defineConfig({
         start_url: '/attendance-system/',
         scope: '/attendance-system/',
         icons: [
-          { src: '/attendance-system/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/attendance-system/icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: '/attendance-system/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: './icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: './icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: './maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {
