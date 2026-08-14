@@ -132,16 +132,13 @@ export default function AttendanceSession() {
           target.tagName === 'SELECT' ||
           target.isContentEditable);
       if (isTyping) return;
-      if (e.key === 'ArrowRight' || e.key === 'Enter') {
+      if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         mark(RECORD_STATUS.PRESENT);
-      } else if (e.key === 'ArrowLeft' || e.key === ' ') {
+      } else if (e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         mark(RECORD_STATUS.ABSENT);
-      } else if (e.key === 'Backspace') {
-        e.preventDefault();
-        undoLast();
-      } else if (e.key === 'ArrowUp') {
+      } else if (e.key === 'Backspace' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
         goPrevious();
       } else if (presentationMode && e.key === 'Escape') {
@@ -331,11 +328,10 @@ export default function AttendanceSession() {
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
             <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Keyboard Shortcuts</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-4">
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">→</span> Present</div>
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">←</span> Absent</div>
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">↑</span> Previous</div>
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">↶</span> Undo</div>
+            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-3">
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">→ / Space / Enter</span> Present (Next)</div>
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">A</span> Absent</div>
+              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">← / Backspace</span> Back</div>
             </div>
           </div>
 
