@@ -46,13 +46,12 @@ function ClassCard({ klass, navigate, onDelete }) {
     <div className="card fade-in flex flex-col p-5 transition hover:shadow-lift">
       <div className="flex items-start justify-between gap-2">
         <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 text-left">
-          <h3 className="truncate text-lg font-bold text-slate-900">{klass.class_name}</h3>
-          {klass.section && <p className="text-sm font-medium text-slate-500">{klass.section}</p>}
-          {(klass.year || klass.semester) && (
-            <p className="text-xs font-medium text-slate-400">
-              Year {klass.year || '—'}{klass.year && klass.semester ? ' · ' : ''}Semester {klass.semester || '—'}
-            </p>
-          )}
+          <h3 className="truncate text-lg font-bold text-slate-900">
+            {klass.class_name}{klass.year ? ` · Year ${klass.year}` : ''}
+          </h3>
+          <p className="text-sm font-medium text-slate-500">
+            {klass.semester ? `Semester ${klass.semester}` : ''}{klass.section ? `${klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
+          </p>
         </button>
         <Dropdown items={menu} />
       </div>

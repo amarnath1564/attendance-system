@@ -179,48 +179,50 @@ export default function ClassSetup() {
               />
             </div>
             <div>
+              <label className="label">Year</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4].map((y) => (
+                  <button
+                    key={y}
+                    type="button"
+                    className={`select-box ${year === String(y) ? 'select-box-active' : ''}`}
+                    onClick={() => setYear(year === String(y) ? '' : String(y))}
+                  >
+                    {y}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="label">Semester</label>
+              <div className="flex gap-2">
+                {['A', 'B'].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`select-box ${semester === s ? 'select-box-active' : ''}`}
+                    onClick={() => setSemester(semester === s ? '' : s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
               <label className="label" htmlFor="cls-section">
                 Section
               </label>
               <input
                 id="cls-section"
                 className="input"
-                placeholder="Section 2"
+                type="number"
+                placeholder="Section"
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="label">Year</label>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((y) => (
-                <button
-                  key={y}
-                  type="button"
-                  className={`select-box ${year === String(y) ? 'select-box-active' : ''}`}
-                  onClick={() => setYear(year === String(y) ? '' : String(y))}
-                >
-                  {y}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="label">Semester</label>
-            <div className="flex gap-2">
-              {['A', 'B'].map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`select-box ${semester === s ? 'select-box-active' : ''}`}
-                  onClick={() => setSemester(semester === s ? '' : s)}
-                >
-                  {s}
-                </button>
-              ))}
             </div>
           </div>
 
