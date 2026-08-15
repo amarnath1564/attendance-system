@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { RECORD_STATUS } from '../db/db.js';
 import { getSessionsForClass } from '../db/repositories.js';
@@ -45,6 +45,7 @@ function SessionRow({ session, klass, counts }) {
 export default function AttendanceHistory() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const klass = useLiveQuery(() => db.classes.get(id), [id]);
   const sessions = useLiveQuery(() => getSessionsForClass(id), [id]);
   const rosterTotal = useLiveQuery(
@@ -54,7 +55,8 @@ export default function AttendanceHistory() {
   const [month, setMonth] = useState(new Date());
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const [selectedDate, setSelectedDate] = useState(todayKey);
+  const selectedDate = searchParams.get('date') || todayKey;
+  const setSelectedDate = (val) => setSearchParams((p) => { const np = new URLSearchParams(p); if (!val) np.delete('date'); else np.set('date', val); return np; });
 
   const allRecords = useLiveQuery(
     async () => {

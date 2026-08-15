@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { RECORD_STATUS } from '../db/db.js';
 import { getStudentsForClass } from '../db/repositories.js';
@@ -44,8 +44,10 @@ function SessionRow({ session, className, counts }) {
 
 export default function GlobalAttendanceHistory() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const classes = useLiveQuery(() => db.classes.toArray(), []);
-  const [selectedClassId, setSelectedClassId] = useState('all');
+  const selectedClassId = searchParams.get('class') || 'all';
+  const setSelectedClassId = (val) => setSearchParams((p) => { const np = new URLSearchParams(p); if (val === 'all') np.delete('class'); else np.set('class', val); return np; });
   
   const allSessions = useLiveQuery(async () => {
     if (!classes || classes.length === 0) return [];
@@ -85,7 +87,8 @@ export default function GlobalAttendanceHistory() {
   const [month, setMonth] = useState(new Date());
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const [selectedDate, setSelectedDate] = useState(todayKey);
+  const selectedDate = searchParams.get('date') || todayKey;
+  const setSelectedDate = (val) => setSearchParams((p) => { const np = new URLSearchParams(p); if (!val) np.delete('date'); else np.set('date', val); return np; });
 
   const rows = useMemo(() => {
     return (allSessions || [])
