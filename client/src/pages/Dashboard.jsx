@@ -141,15 +141,27 @@ function ClassListItem({ klass, navigate, onDelete }) {
   return (
     <div className="card fade-in flex items-center gap-4 p-4 transition hover:shadow-lift">
       <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 flex-1 text-left">
-        <div className="flex items-center gap-3">
-          <h3 className="truncate text-base font-bold text-slate-900">
-            {klass.class_name}
-          </h3>
-          <span className="text-xs font-medium text-slate-500">
-            {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Sem ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Sec ${klass.section}` : ''}
-          </span>
+        <h3 className="truncate text-base font-bold text-slate-900">
+          {klass.class_name}
+        </h3>
+        <div className="mt-1 flex flex-wrap gap-1.5">
+          {klass.year && (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              Year {klass.year}
+            </span>
+          )}
+          {klass.semester && (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              Semester {klass.semester}
+            </span>
+          )}
+          {klass.section && (
+            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              Section {klass.section}
+            </span>
+          )}
         </div>
-        <div className="mt-1 flex items-center gap-4 text-sm text-slate-500">
+        <div className="mt-1.5 flex items-center gap-4 text-sm text-slate-500">
           <span className="flex items-center gap-1">
             <Icon d={Icons.users} className="h-3.5 w-3.5 text-slate-400" />
             {activeCount} student{activeCount === 1 ? '' : 's'}
