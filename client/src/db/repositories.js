@@ -91,12 +91,13 @@ export async function deleteClass(id) {
 }
 
 // ---------------------------------------------------------------- Students
-export async function addStudent({ class_id, application_number, roll_number, name, email, status = STUDENT_STATUS.ACTIVE }) {
+export async function addStudent({ class_id, application_number, roll_number, prn_number, name, email, status = STUDENT_STATUS.ACTIVE }) {
   const student = {
     id: uid('stu'),
     class_id,
     application_number: (application_number || '').toString().trim(),
     roll_number: (roll_number || '').toString().trim(),
+    prn_number: (prn_number || '').toString().trim(),
     name: name.trim(),
     email: (email || '').trim(),
     status,
@@ -130,6 +131,7 @@ export async function bulkImportStudents(class_id, students) {
         class_id,
         application_number: String(s.application_number || '').trim(),
         roll_number: String(s.roll_number || '').trim(),
+        prn_number: String(s.prn_number || '').trim(),
         name: String(s.name || '').trim(),
         email: String(s.email || '').trim(),
         status: s.status || STUDENT_STATUS.ACTIVE,

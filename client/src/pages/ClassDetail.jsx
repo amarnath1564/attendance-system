@@ -20,6 +20,7 @@ import { buildAttendanceMatrixCsv, downloadCsv } from '../lib/attendanceCsv.js';
 function StudentForm({ open, onClose, student, classId, onSaved }) {
   const [app, setApp] = useState(student?.application_number || '');
   const [roll, setRoll] = useState(student?.roll_number || '');
+  const [prn, setPrn] = useState(student?.prn_number || '');
   const [name, setName] = useState(student?.name || '');
   const [email, setEmail] = useState(student?.email || '');
   const [error, setError] = useState('');
@@ -38,6 +39,7 @@ function StudentForm({ open, onClose, student, classId, onSaved }) {
         await updateStudent(student.id, {
           application_number: app,
           roll_number: roll,
+          prn_number: prn,
           name,
           email,
         });
@@ -46,6 +48,7 @@ function StudentForm({ open, onClose, student, classId, onSaved }) {
           class_id: classId,
           application_number: app,
           roll_number: roll,
+          prn_number: prn,
           name,
           email,
         });
@@ -64,17 +67,23 @@ function StudentForm({ open, onClose, student, classId, onSaved }) {
       <form onSubmit={submit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="stu-app">
-              Application Number
-            </label>
-            <input id="stu-app" className="input" value={app} onChange={(e) => setApp(e.target.value)} />
-          </div>
-          <div>
             <label className="label" htmlFor="stu-roll">
               Roll Number
             </label>
             <input id="stu-roll" className="input" value={roll} onChange={(e) => setRoll(e.target.value)} />
           </div>
+          <div>
+            <label className="label" htmlFor="stu-prn">
+              PRN No.
+            </label>
+            <input id="stu-prn" className="input" value={prn} onChange={(e) => setPrn(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <label className="label" htmlFor="stu-app">
+            Application Number
+          </label>
+          <input id="stu-app" className="input" value={app} onChange={(e) => setApp(e.target.value)} />
         </div>
         <div>
           <label className="label" htmlFor="stu-name">
@@ -489,6 +498,7 @@ export default function ClassDetail() {
                     <tr>
                       <th className="px-4 py-3">Roll Number</th>
                       <th className="px-4 py-3">PRN No.</th>
+                      <th className="px-4 py-3">Application Number</th>
                       <th className="px-4 py-3">Student Name</th>
                       <th className="hidden px-4 py-3 md:table-cell">Email</th>
                       <th className="px-4 py-3 text-right">Actions</th>
@@ -498,6 +508,7 @@ export default function ClassDetail() {
                     {filtered.map((s) => (
                       <tr key={s.id} className={`hover:bg-slate-50/60 ${s.status === STUDENT_STATUS.INACTIVE ? 'opacity-60' : ''}`}>
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.roll_number}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.prn_number}</td>
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
