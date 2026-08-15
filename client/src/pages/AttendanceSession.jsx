@@ -10,7 +10,6 @@ import {
   getRecordMap,
   deleteRecordByStudent,
   hasCompletedSessionOnDate,
-  getSessionsOnDate,
 } from '../db/repositories.js';
 import { toDateKey, formatDateLabel } from '../lib/utils.js';
 import { useApp } from '../state/AppContext.jsx';
@@ -65,43 +64,25 @@ export default function AttendanceSession() {
   const session = useLiveQuery(() => getInProgressSession(id), [id]);
   const records = useLiveQuery(async () => (session ? getRecordMap(session.id) : {}), [session?.id]);
   const duplicateToday = useLiveQuery(async () => hasCompletedSessionOnDate(id, toDateKey(new Date())), [id]);
-  const todaySessions = useLiveQuery(async () => getSessionsOnDate(id, toDateKey(new Date())), [id]);
 
   const [index, setIndex] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [replaceWarn, setReplaceWarn] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
   const [actions, setActions] = useState([]);
-  const [sessionName, setSessionName] = useState('');
-  const [showNameModal, setShowNameModal] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
   const onKeyRef = useRef(() => {});
 
   useEffect(() => {
     if (session || creating.current) return;
-    if (todaySessions && todaySessions.length > 0) {
-      setSessionName(`Session ${todaySessions.length + 1}`);
-      setShowNameModal(true);
-    } else {
-      creating.current = true;
-      createSession(id)
-        .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
-        .finally(() => {
-          creating.current = false;
-        });
-    }
-  }, [session, todaySessions]);
-
-  const startSessionWithName = async () => {
-    setShowNameModal(false);
     creating.current = true;
-    createSession(id, sessionName.trim() || undefined)
+    createSession(id)
       .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
       .finally(() => {
         creating.current = false;
       });
-  };
+  }, [session, id, pushToast]);
 
   useEffect(() => {
     if (!students || !records || initialized) return;
@@ -531,32 +512,6 @@ export default function AttendanceSession() {
           </button>
           <button className="btn-primary" onClick={startNew}>
             Start New Session
-          </button>
-        </div>
-      </Modal>
-
-      <Modal open={showNameModal} onClose={() => { setShowNameModal(false); navigate('/'); }} title="Name this session" size="sm">
-        <p className="text-sm leading-6 text-slate-600">
-          You already have a session today. Enter a name for this new session or use the default.
-        </p>
-        <div className="mt-4">
-          <label className="label" htmlFor="session-name">
-            Session Name
-          </label>
-          <input
-            id="session-name"
-            className="input"
-            value={sessionName}
-            onChange={(e) => setSessionName(e.target.value)}
-            autoFocus
-          />
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button className="btn-secondary" onClick={() => { setShowNameModal(false); navigate('/'); }}>
-            Cancel
-          </button>
-          <button className="btn-primary" onClick={startSessionWithName}>
-            Start Session
           </button>
         </div>
       </Modal>
