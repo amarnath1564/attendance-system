@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db from '../db/db.js';
 import { addClass, updateClass, bulkImportStudents } from '../db/repositories.js';
-import { parseCsv, generateSampleStudents } from '../lib/sample.js';
+import { parseCsv } from '../lib/sample.js';
 import { parseStudentRows } from '../lib/studentSheet.js';
 import { useApp } from '../state/AppContext.jsx';
 import { BackLink, Spinner, PageHeader } from '../components/ui.jsx';
@@ -97,17 +97,6 @@ export default function ClassSetup() {
     } finally {
       setBusy(false);
     }
-  };
-
-  const useSample = async (e) => {
-    e.preventDefault();
-    setError('');
-    if (!name.trim()) {
-      setError('Please enter a class name.');
-      return;
-    }
-    const students = generateSampleStudents(24);
-    setPreview({ source: 'sample', students });
   };
 
   const onCsv = (e) => {
@@ -256,9 +245,6 @@ export default function ClassSetup() {
               onClick={() => fileRef.current?.click()}
             >
               <Icon d={Icons.upload} className="h-4 w-4" /> Upload CSV
-            </button>
-            <button type="button" className="btn-secondary" disabled={busy} onClick={useSample}>
-              <Icon d={Icons.users} className="h-4 w-4" /> Sample Students
             </button>
             <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onCsv} />
           </div>
