@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import db, { RECORD_STATUS } from '../db/db.js';
 import { getSession, getRecordMap, getStudentsForClass } from '../db/repositories.js';
 import { formatDate, fromDateKey } from '../lib/utils.js';
-import { BackLink, EmptyState, PageHeader } from '../components/ui.jsx';
+import { BackLink, EmptyState } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
 
 export default function SessionDetail() {
@@ -21,6 +21,7 @@ export default function SessionDetail() {
 
   const present = list.filter((x) => x.status === RECORD_STATUS.PRESENT).length;
   const absent = list.filter((x) => x.status === RECORD_STATUS.ABSENT).length;
+  const notMarked = list.filter((x) => !x.status).length;
   const pct = list.length ? ((present / list.length) * 100).toFixed(1) : '0.0';
 
   if (!klass || !session) return null;
@@ -28,21 +29,26 @@ export default function SessionDetail() {
   const date = fromDateKey(session.date);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-8">
       <BackLink to={`/classes/${id}/history`} label="Attendance History" />
-      <div className="mt-4">
-        <PageHeader
-          title={formatDate(date)}
-          subtitle={(() => {
-            const parts = [klass.class_name];
-            if (klass.section) parts.push(klass.section);
-            if (klass.year || klass.semester) parts.push(`Year ${klass.year || '—'} · Semester ${klass.semester || '—'}`);
-            return parts.join(' · ');
-          })()}
-        />
+
+      <div className="mt-4 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{formatDate(date)}</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            {klass.class_name}
+            {klass.section ? ` · Section ${klass.section}` : ''}
+            {klass.year ? ` · Year ${klass.year}` : ''}
+            {klass.semester ? ` · Semester ${klass.semester}` : ''}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-black text-slate-400">{notMarked}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Not Marked</p>
+        </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 mb-6 grid grid-cols-3 gap-3">
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-emerald-600">{present}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Present</p>
@@ -62,6 +68,8 @@ export default function SessionDetail() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
+                <th className="px-4 py-3">Roll Number</th>
+                <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
                 <th className="px-4 py-3">Student</th>
                 <th className="px-4 py-3 text-right">Status</th>
@@ -70,6 +78,8 @@ export default function SessionDetail() {
             <tbody className="divide-y divide-slate-100">
               {list.map(({ student, status }) => (
                 <tr key={student.id} className="hover:bg-slate-50/60">
+                  <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.roll_number}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.prn_number}</td>
                   <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
                   <td className="px-4 py-2.5 font-medium text-slate-900">{student.name}</td>
                   <td className="px-4 py-2.5 text-right">
