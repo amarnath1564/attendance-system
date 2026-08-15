@@ -44,6 +44,7 @@ function SessionRow({ session, klass, counts }) {
 
 export default function AttendanceHistory() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const klass = useLiveQuery(() => db.classes.get(id), [id]);
   const sessions = useLiveQuery(() => getSessionsForClass(id), [id]);
   const rosterTotal = useLiveQuery(
@@ -51,6 +52,10 @@ export default function AttendanceHistory() {
     [id]
   );
   const [month, setMonth] = useState(new Date());
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [selectedDate, setSelectedDate] = useState(todayKey);
+
   const allRecords = useLiveQuery(
     async () => {
       if (!sessions || sessions.length === 0) return {};
@@ -84,28 +89,29 @@ export default function AttendanceHistory() {
   const sessionByDate = useMemo(() => {
     const map = {};
     for (const row of rows) {
-      map[row.session.date] = row;
+      if (!map[row.session.date]) map[row.session.date] = [];
+      map[row.session.date].push(row);
     }
     return map;
   }, [rows]);
+
+  const selectedSessions = selectedDate ? sessionByDate[selectedDate] || [] : [];
 
   const monthGrid = useMemo(() => getMonthGrid(month), [month]);
   const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(month);
 
   if (!klass) return null;
 
-  const selectedDate = rows.length ? rows[rows.length - 1].session.date : null;
-
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-4">
         <BackLink to={`/classes/${id}`} label="Back to class" />
       </div>
       <PageHeader title="Attendance History" subtitle={klass.class_name} />
 
       {rows.length > 0 ? (
-        <>
-          <div className="card mb-6 p-4 sm:p-5">
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="card p-4 sm:p-5 lg:w-[520px] shrink-0">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
@@ -122,44 +128,44 @@ export default function AttendanceHistory() {
               </div>
             </div>
 
-            <div className="grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
               {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
                 <div key={day} className="py-2">{day}</div>
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="grid grid-cols-7 gap-1">
               {monthGrid.cells.map((date) => {
                 const key = date.toISOString().slice(0, 10);
                 const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                const hasSession = !!sessionByDate[dayKey];
+                const hasSessions = !!sessionByDate[dayKey];
                 const isCurrentMonth = date.getMonth() === month.getMonth();
                 const isToday = key === new Date().toISOString().slice(0, 10);
-                const session = sessionByDate[dayKey]?.session;
-                const counts = sessionByDate[dayKey]?.counts || { present: 0, absent: 0 };
+                const isSelected = selectedDate === dayKey;
+                const sessionsOnDay = sessionByDate[dayKey] || [];
+                const totalCount = sessionsOnDay.reduce((sum, s) => sum + s.counts.total, 0);
+                const totalPresent = sessionsOnDay.reduce((sum, s) => sum + s.counts.present, 0);
+                const totalAbsent = sessionsOnDay.reduce((sum, s) => sum + s.counts.absent, 0);
                 return (
                   <button
                     key={`${dayKey}-cell`}
-                    onClick={() => session && navigate(`/classes/${id}/history/${session.id}`)}
-                    disabled={!session}
+                    onClick={() => setSelectedDate(isSelected ? null : dayKey)}
                     className={[
-                      'relative flex min-h-[84px] flex-col rounded-xl border p-1.5 text-left transition',
+                      'relative flex min-h-[64px] flex-col rounded-lg border p-1 text-left transition',
                       isCurrentMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 text-slate-400',
                       isToday ? 'ring-2 ring-brand-300' : '',
-                      hasSession ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50',
+                      hasSessions ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50',
+                      isSelected ? 'ring-2 ring-brand-500 border-brand-300' : '',
                     ].join(' ')}
                   >
                     <span className="text-xs font-bold">{date.getDate()}</span>
-                    {hasSession ? (
+                    {hasSessions ? (
                       <div className="mt-auto">
                         <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700">
-                          <span>{counts.present}</span>
+                          <span>{totalPresent}</span>
                           <span>✓</span>
                         </div>
-                        <div className="text-[10px] text-slate-500">{counts.absent} absent</div>
-                        {counts.total > counts.present + counts.absent && (
-                          <div className="text-[10px] text-slate-400">{counts.total - counts.present - counts.absent} not marked</div>
-                        )}
+                        <div className="text-[10px] text-slate-500">{totalAbsent} absent</div>
                       </div>
                     ) : null}
                   </button>
@@ -168,27 +174,38 @@ export default function AttendanceHistory() {
             </div>
           </div>
 
-          {selectedDate && sessionByDate[selectedDate] && (
-            <div className="card mb-6 p-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Selected Date</p>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xl font-black text-slate-900">{formatDate(fromDateKey(selectedDate))}</p>
-                  <p className="text-sm text-slate-500">{sessionByDate[selectedDate].counts.present} / {sessionByDate[selectedDate].counts.total} present</p>
+          <div className="flex-1 min-w-0">
+            {selectedDate ? (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-slate-900">{formatDate(fromDateKey(selectedDate))}</h3>
+                  <button className="btn-secondary text-sm" onClick={() => setSelectedDate(null)}>
+                    <Icon d={Icons.x} className="h-4 w-4" /> Close
+                  </button>
                 </div>
-                <button className="btn-primary" onClick={() => navigate(`/classes/${id}/history/${sessionByDate[selectedDate].session.id}`)}>
-                  Open Session
-                </button>
+                {selectedSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedSessions.map(({ session, counts }) => (
+                      <SessionRow key={session.id} session={session} klass={klass} counts={counts} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="card flex flex-col items-center justify-center p-8 text-center">
+                    <Icon d={Icons.history} className="h-10 w-10 text-slate-300" />
+                    <p className="mt-3 font-semibold text-slate-700">No sessions found</p>
+                    <p className="text-sm text-slate-500">No attendance was taken on this date.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card flex flex-col items-center justify-center p-8 text-center">
+                <Icon d={Icons.calendar} className="h-10 w-10 text-slate-300" />
+                <p className="mt-3 font-semibold text-slate-700">Select a date</p>
+                <p className="text-sm text-slate-500">Click a day on the calendar to view its sessions.</p>
               </div>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {rows.map(({ session, counts }) => (
-              <SessionRow key={session.id} session={session} klass={klass} counts={counts} />
-            ))}
+            )}
           </div>
-        </>
+        </div>
       ) : (
         <EmptyState
           icon={Icons.history}
