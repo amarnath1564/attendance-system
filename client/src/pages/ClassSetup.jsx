@@ -5,6 +5,7 @@ import db from '../db/db.js';
 import { addClass, updateClass, bulkImportStudents } from '../db/repositories.js';
 import { parseCsv } from '../lib/sample.js';
 import { parseStudentRows } from '../lib/studentSheet.js';
+import { parseClassExport } from '../lib/classExport.js';
 import { useApp } from '../state/AppContext.jsx';
 import { BackLink, Spinner, PageHeader } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
@@ -49,6 +50,7 @@ export default function ClassSetup() {
   const navigate = useNavigate();
   const { pushToast } = useApp();
   const fileRef = useRef(null);
+  const importFileRef = useRef(null);
 
   const klass = useLiveQuery(async () => (id ? db.classes.get(id) : null), [id]);
 
@@ -143,6 +145,27 @@ export default function ClassSetup() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const onImportClass = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = parseClassExport(String(reader.result || ''));
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      const { class: classData, students } = result.data;
+      setName(classData.class_name || '');
+      setSection(classData.section || '');
+      setYear(classData.year || '');
+      setSemester(classData.semester || '');
+      setThreshold(classData.attendance_threshold ?? 75);
+      setPreview({ source: 'import', students });
+    };
+    reader.readAsText(file);
   };
 
   if (editing && !klass) return null;
@@ -256,9 +279,21 @@ export default function ClassSetup() {
               <Icon d={Icons.upload} className="h-4 w-4" /> Upload CSV
             </button>
             <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onCsv} />
+            <button
+              type="button"
+              className="btn-secondary flex-1 py-3"
+              disabled={busy}
+              onClick={() => importFileRef.current?.click()}
+            >
+              <Icon d={Icons.upload} className="h-4 w-4" /> Import Existing Class
+            </button>
+            <input ref={importFileRef} type="file" accept=".json,application/json" className="hidden" onChange={onImportClass} />
           </div>
           <p className="text-xs leading-5 text-slate-500">
             The CSV should have columns: Application Number, Roll Number, Student Name. Email and Status are optional.
+          </p>
+          <p className="text-xs leading-5 text-slate-500">
+            Import Existing Class: Upload a previously exported class JSON file to restore class details and students.
           </p>
 
           <div className="border-t border-slate-100 pt-4">

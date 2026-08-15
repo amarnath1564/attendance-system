@@ -10,6 +10,7 @@ import {
   getStudentsForClass,
 } from '../db/repositories.js';
 import { formatDate } from '../lib/utils.js';
+import { exportClass, downloadClassExport } from '../lib/classExport.js';
 import { useApp } from '../state/AppContext.jsx';
 import Dropdown from '../components/Dropdown.jsx';
 import { EmptyState } from '../components/ui.jsx';
@@ -24,6 +25,7 @@ function greeting() {
 }
 
 function ClassCard({ klass, navigate, onDelete }) {
+  const { pushToast } = useApp();
   const students = useLiveQuery(() => getStudentsForClass(klass.id, { includeInactive: true }), [klass.id]);
   const activeCount = useMemo(
     () => (students || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE).length,
@@ -34,7 +36,19 @@ function ClassCard({ klass, navigate, onDelete }) {
 
   const lastSession = sessions && sessions.length ? sessions[sessions.length - 1] : null;
 
+  const handleExport = async () => {
+    try {
+      const data = await exportClass(klass.id);
+      const filename = `${(klass.class_name || 'class').replace(/\s+/g, '-').toLowerCase()}-export.json`;
+      downloadClassExport(data, filename);
+      pushToast({ type: 'success', title: 'Class exported', message: 'Downloaded class export file.' });
+    } catch (err) {
+      pushToast({ type: 'error', title: 'Export failed', message: err.message });
+    }
+  };
+
   const menu = [
+    { label: 'Export Class', icon: Icons.download, onClick: handleExport },
     { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
     { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
   ];
