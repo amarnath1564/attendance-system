@@ -21,7 +21,7 @@ export default function SessionDetail() {
 
   const present = list.filter((x) => x.status === RECORD_STATUS.PRESENT).length;
   const absent = list.filter((x) => x.status === RECORD_STATUS.ABSENT).length;
-  const pct = present + absent ? ((present / (present + absent)) * 100).toFixed(1) : '0.0';
+  const pct = list.length ? ((present / list.length) * 100).toFixed(1) : '0.0';
 
   if (!klass || !session) return null;
 

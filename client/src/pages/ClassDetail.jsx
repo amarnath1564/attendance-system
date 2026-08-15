@@ -14,7 +14,7 @@ import { BackLink, StatusPill, PageHeader, EmptyState } from '../components/ui.j
 import Modal, { Confirm } from '../components/Modal.jsx';
 import Dropdown from '../components/Dropdown.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
-import { DEFAULT_ATTENDANCE_THRESHOLD, clampThreshold, formatDate, getRiskLevel, getStudentAttendancePercentage } from '../lib/utils.js';
+import { DEFAULT_ATTENDANCE_THRESHOLD, clampThreshold, formatDate, getRiskLevel } from '../lib/utils.js';
 import { buildAttendanceMatrixCsv, downloadCsv } from '../lib/attendanceCsv.js';
 
 function StudentForm({ open, onClose, student, classId, onSaved }) {
@@ -152,14 +152,15 @@ export default function ClassDetail() {
     }
 
     const percentages = activeStudents.map((student) => {
-      const recordsList = completedSessions
-        .map((session) => (attendanceRecords?.[session.id] || []).find((record) => record.student_id === student.id))
-        .filter(Boolean);
-      const total = recordsList.length;
-      const present = recordsList.filter((record) => record.status === RECORD_STATUS.PRESENT).length;
+      let present = 0;
+      for (const session of completedSessions) {
+        const record = (attendanceRecords?.[session.id] || []).find((record) => record.student_id === student.id);
+        if (record?.status === RECORD_STATUS.PRESENT) present += 1;
+      }
       return {
         student,
-        percentage: total ? (present / total) * 100 : 0,
+        totalSessions: completedSessions.length,
+        percentage: completedSessions.length ? (present / completedSessions.length) * 100 : 0,
       };
     });
 
@@ -169,6 +170,7 @@ export default function ClassDetail() {
 
     const summary = { safe: 0, atRisk: 0, critical: 0 };
     for (const item of percentages) {
+      if (item.totalSessions === 0) continue;
       const risk = getRiskLevel(item.percentage, threshold);
       if (risk.label === 'SAFE') summary.safe += 1;
       else if (risk.label === 'AT RISK') summary.atRisk += 1;
@@ -176,12 +178,13 @@ export default function ClassDetail() {
     }
 
     return {
+      hasData: completedSessions.length > 0,
       lastSession,
       lastSessionDate,
       lastPresent,
       lastAbsent,
       average,
-      belowThreshold: percentages.filter((item) => item.percentage < threshold).length,
+      belowThreshold: percentages.filter((item) => item.totalSessions > 0 && item.percentage < threshold).length,
       risk: summary,
       percentages,
     };
@@ -290,11 +293,11 @@ export default function ClassDetail() {
             </div>
             <div className="rounded-xl bg-slate-50 p-3">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Average Attendance</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.average.toFixed(1)}%</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? `${classStats.average.toFixed(1)}%` : '—'}</p>
             </div>
             <div className="rounded-xl bg-slate-50 p-3">
               <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Below {threshold}%</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.belowThreshold}</p>
+              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? classStats.belowThreshold : '—'}</p>
             </div>
           </div>
           <div className="mt-4 flex justify-end">
@@ -330,7 +333,9 @@ export default function ClassDetail() {
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           {(allStudents || []).filter((student) => student.status === STUDENT_STATUS.ACTIVE).map((student) => {
-            const pct = classStats.percentages.find((item) => item.student.id === student.id)?.percentage ?? 0;
+            const item = classStats.percentages.find((entry) => entry.student.id === student.id);
+            const pct = item?.percentage ?? 0;
+            const noData = item?.totalSessions === 0;
             const risk = getRiskLevel(pct, threshold);
             const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
             return (
@@ -340,10 +345,16 @@ export default function ClassDetail() {
                   <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
-                  <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
-                    {risk.icon} {risk.label}
-                  </span>
+                  {noData ? (
+                    <p className="text-xs font-semibold text-slate-400">No attendance data</p>
+                  ) : (
+                    <>
+                      <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
+                        {risk.icon} {risk.label}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             );

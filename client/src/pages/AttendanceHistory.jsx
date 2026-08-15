@@ -46,6 +46,10 @@ export default function AttendanceHistory() {
   const { id } = useParams();
   const klass = useLiveQuery(() => db.classes.get(id), [id]);
   const sessions = useLiveQuery(() => getSessionsForClass(id), [id]);
+  const rosterTotal = useLiveQuery(
+    async () => db.students.where('class_id').equals(id).filter((s) => s.status === 'active').count(),
+    [id]
+  );
   const [month, setMonth] = useState(new Date());
   const allRecords = useLiveQuery(
     async () => {
@@ -63,18 +67,19 @@ export default function AttendanceHistory() {
   );
 
   const rows = useMemo(() => {
+    const total = rosterTotal ?? null;
     return (sessions || []).map((s) => {
       const recs = allRecords?.[s.id] || [];
       return {
         session: s,
         counts: {
-          total: recs.length,
+          total: total ?? recs.length,
           present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
           absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
         },
       };
     });
-  }, [sessions, allRecords]);
+  }, [sessions, allRecords, rosterTotal]);
 
   const sessionByDate = useMemo(() => {
     const map = {};
@@ -152,6 +157,9 @@ export default function AttendanceHistory() {
                           <span>✓</span>
                         </div>
                         <div className="text-[10px] text-slate-500">{counts.absent} absent</div>
+                        {counts.total > counts.present + counts.absent && (
+                          <div className="text-[10px] text-slate-400">{counts.total - counts.present - counts.absent} not marked</div>
+                        )}
                       </div>
                     ) : null}
                   </button>

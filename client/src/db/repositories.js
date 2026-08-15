@@ -220,24 +220,26 @@ export async function updateSessionDate(id, date) {
 
 // ---------------------------------------------------------------- Attendance records
 export async function upsertRecord(session_id, student_id, status) {
-  const existing = await db.attendance_records
-    .where('[attendance_session_id+student_id]')
-    .equals([session_id, student_id])
-    .first();
-  if (existing) {
-    await db.attendance_records.update(existing.id, { status, updated_at: nowIso() });
-    return existing.id;
-  }
-  const record = {
-    id: uid('rec'),
-    attendance_session_id: session_id,
-    student_id,
-    status,
-    created_at: nowIso(),
-    updated_at: nowIso(),
-  };
-  await db.attendance_records.add(record);
-  return record.id;
+  return db.transaction('rw', db.attendance_records, async () => {
+    const existing = await db.attendance_records
+      .where('[attendance_session_id+student_id]')
+      .equals([session_id, student_id])
+      .first();
+    if (existing) {
+      await db.attendance_records.update(existing.id, { status, updated_at: nowIso() });
+      return existing.id;
+    }
+    const record = {
+      id: uid('rec'),
+      attendance_session_id: session_id,
+      student_id,
+      status,
+      created_at: nowIso(),
+      updated_at: nowIso(),
+    };
+    await db.attendance_records.add(record);
+    return record.id;
+  });
 }
 
 export async function getRecordsForSession(session_id) {

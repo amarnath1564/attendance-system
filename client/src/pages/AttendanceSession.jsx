@@ -26,6 +26,34 @@ function CountPill({ label, value, tone }) {
   );
 }
 
+function KeyCap({ children, dark = false }) {
+  return (
+    <kbd
+      className={`rounded-md border px-1.5 py-0.5 font-mono text-[11px] font-bold ${
+        dark ? 'border-slate-600 bg-slate-900 text-slate-100' : 'border-slate-300 bg-white text-slate-900'
+      }`}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+function Legend({ dark = false }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold">
+      <span className="flex items-center gap-1.5">
+        <KeyCap dark={dark}>A</KeyCap> <span className="text-slate-400">→</span> Absent
+      </span>
+      <span className="flex items-center gap-1.5">
+        <KeyCap dark={dark}>→</KeyCap> / <KeyCap dark={dark}>Next</KeyCap> <span className="text-slate-400">→</span> Present + Forward
+      </span>
+      <span className="flex items-center gap-1.5">
+        <KeyCap dark={dark}>←</KeyCap> / <KeyCap dark={dark}>Back</KeyCap> <span className="text-slate-400">→</span> Backward traversal only
+      </span>
+    </div>
+  );
+}
+
 export default function AttendanceSession() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -82,7 +110,7 @@ export default function AttendanceSession() {
   const progressPct = total ? Math.round((markedCount / total) * 100) : 0;
 
   const mark = async (status) => {
-    if (!students || !session || !current) return;
+    if (!students || !session || !current || index >= students.length) return;
     const now = Date.now();
     if (now - lastMark.current < 250) return;
     lastMark.current = now;
@@ -93,9 +121,13 @@ export default function AttendanceSession() {
       return;
     }
 
-    await upsertRecord(session.id, current.id, status);
-    setActions((a) => [...a, { studentId: current.id }]);
-    setIndex((i) => Math.min(i + 1, students.length - 1));
+    try {
+      await upsertRecord(session.id, current.id, status);
+      setActions((a) => [...a, { studentId: current.id }]);
+      setIndex((i) => Math.min(i + 1, students.length - 1));
+    } catch (err) {
+      pushToast({ type: 'error', title: 'Could not save attendance', message: err.message });
+    }
   };
 
   const goPrevious = () => {
@@ -105,9 +137,14 @@ export default function AttendanceSession() {
   const undoLast = async () => {
     if (!session || actions.length === 0) return;
     const action = actions[actions.length - 1];
-    const student = students.find((s) => s.id === action.studentId);
-    await deleteRecordByStudent(session.id, action.studentId);
+    try {
+      await deleteRecordByStudent(session.id, action.studentId);
+    } catch (err) {
+      pushToast({ type: 'error', title: 'Could not undo', message: err.message });
+      return;
+    }
     setActions((a) => a.slice(0, -1));
+    const student = students.find((s) => s.id === action.studentId);
     if (student) setIndex(students.indexOf(student));
   };
 
@@ -157,18 +194,32 @@ export default function AttendanceSession() {
           target.tagName === 'TEXTAREA' ||
           target.tagName === 'SELECT' ||
           target.isContentEditable);
-      if (isTyping) return;
+      if (isTyping || e.repeat) return;
+
+      const handled =
+        e.key === 'ArrowRight' ||
+        e.key === 'Enter' ||
+        e.key === ' ' ||
+        e.key === 'a' ||
+        e.key === 'A' ||
+        e.key === 'ArrowLeft' ||
+        e.key === 'Backspace' ||
+        e.key === 'ArrowUp' ||
+        (presentationMode && e.key === 'Escape');
+      if (!handled) return;
+
+      e.preventDefault();
+      if (document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+        document.activeElement.blur();
+      }
+
       if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
         mark(RECORD_STATUS.PRESENT);
       } else if (e.key === 'a' || e.key === 'A') {
-        e.preventDefault();
         mark(RECORD_STATUS.ABSENT);
       } else if (e.key === 'Backspace' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        e.preventDefault();
         goPrevious();
       } else if (presentationMode && e.key === 'Escape') {
-        e.preventDefault();
         setPresentationMode(false);
       }
     };
@@ -227,68 +278,74 @@ export default function AttendanceSession() {
     }
 
     const alreadyMarked = records[current?.id];
+    const isLast = index === students.length - 1;
     return (
       <div className="fixed inset-0 z-40 bg-slate-950 text-white">
-        <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.4em] text-slate-400">{klass?.class_name}</p>
-          {klass?.section && <p className="mt-2 text-sm font-semibold text-slate-300">{klass.section}</p>}
-          {session?.date && (
-            <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-slate-500">{formatDateLabel(session.date)}</p>
-          )}
+        <div className="flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-8 text-center">
+          <div className="w-full max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.4em] text-slate-400">{klass?.class_name}</p>
+            {klass?.section && <p className="mt-2 text-sm font-semibold text-slate-300">{klass.section}</p>}
+            {session?.date && (
+              <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-slate-500">{formatDateLabel(session.date)}</p>
+            )}
 
-          <div className="mt-10 text-6xl font-black tracking-tight text-white sm:text-8xl">{current?.application_number || '—'}</div>
-          <div className="mt-8 max-w-3xl text-4xl font-black leading-tight sm:text-6xl">{current?.name}</div>
-          <div className="mt-3 text-lg font-semibold text-slate-300">Roll No: {current?.roll_number || '—'}</div>
+            <p className="mt-10 text-lg font-bold tracking-tight text-slate-400 sm:text-xl">{current?.application_number || '—'}</p>
+            <h1 className="mx-auto mt-3 max-w-4xl break-words text-5xl font-black leading-tight tracking-tight text-white sm:text-7xl">
+              {current?.name}
+            </h1>
+            <p className="mt-3 text-base font-semibold text-slate-300 sm:text-lg">Roll No: {current?.roll_number || '—'}</p>
 
-          {alreadyMarked ? (
-            <div className="mt-8 rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
-              Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next will just continue
+            {alreadyMarked ? (
+              <div className="mt-8 inline-flex rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
+                Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next continues
+              </div>
+            ) : (
+              <div className="mt-8 inline-flex rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
+                {index + 1} / {total} — waiting for mark
+              </div>
+            )}
+
+            <div className="mt-8 flex items-center justify-center gap-5 text-lg font-black">
+              <span className="text-emerald-400">{presentCount} Present</span>
+              <span className="text-slate-600">·</span>
+              <span className="text-rose-400">{absentCount} Absent</span>
             </div>
-          ) : (
-            <div className="mt-8 rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
-              {index + 1} / {total} — waiting for mark
+
+            <div className="mx-auto mt-6 h-2 w-72 overflow-hidden rounded-full bg-slate-800">
+              <div className="h-full rounded-full bg-brand-400 transition-all duration-300" style={{ width: `${progressPct}%` }} />
             </div>
-          )}
 
-          <div className="mt-8 flex items-center gap-5 text-lg font-black">
-            <span className="text-emerald-400">{presentCount} <span className="font-bold text-emerald-600">Present</span></span>
-            <span className="text-slate-600">·</span>
-            <span className="text-rose-400">{absentCount} <span className="font-bold text-rose-700">Absent</span></span>
-          </div>
+            <div className="mx-auto mt-10 grid w-full max-w-lg grid-cols-2 gap-4 text-xl font-black sm:text-2xl">
+              <button
+                onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.ABSENT); }}
+                className="rounded-2xl border border-rose-700 bg-rose-900/40 px-5 py-4 text-rose-200 transition hover:bg-rose-900/70 active:bg-rose-900"
+              >
+                Absent
+              </button>
+              <button
+                onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
+                className="rounded-2xl bg-emerald-600 px-5 py-4 text-white transition hover:bg-emerald-500 active:bg-emerald-700"
+              >
+                {isLast ? 'Present & Finish ✓' : 'Present ✓'}
+              </button>
+            </div>
 
-          <div className="mt-6 h-2 w-72 overflow-hidden rounded-full bg-slate-800">
-            <div className="h-full rounded-full bg-brand-400 transition-all duration-300" style={{ width: `${progressPct}%` }} />
-          </div>
+            <div className="mt-8">
+              <Legend dark />
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-slate-500">Esc — Exit presentation mode</p>
+            </div>
 
-          <div className="mt-10 grid w-full max-w-lg grid-cols-2 gap-4 text-xl font-black sm:text-2xl">
-            <button
-              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.ABSENT); }}
-              className="rounded-2xl border border-rose-700 bg-rose-900/40 px-5 py-4 text-rose-200 transition hover:bg-rose-900/70 active:bg-rose-900"
-            >
-              Absent
-            </button>
-            <button
-              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
-              className="rounded-2xl bg-emerald-600 px-5 py-4 text-white transition hover:bg-emerald-500 active:bg-emerald-700"
-            >
-              Present ✓
-            </button>
-          </div>
-
-          <div className="mt-6 text-xs font-semibold uppercase tracking-widest text-slate-500">
-            → Present · A Absent · ← Back · Esc Exit
-          </div>
-
-          <div className="mt-8 flex items-center gap-4 text-sm">
-            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={undoLast} disabled={actions.length === 0}>
-              ↶ Undo
-            </button>
-            <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={goPrevious} disabled={index === 0}>
-              ← Previous
-            </button>
-            <button className="btn-primary" onClick={() => setPresentationMode(false)}>
-              Exit Presentation Mode
-            </button>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm">
+              <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={undoLast} disabled={actions.length === 0}>
+                ↶ Undo
+              </button>
+              <button className="btn-secondary border-slate-600 bg-slate-900 text-slate-100" onClick={goPrevious} disabled={index === 0}>
+                ← Previous
+              </button>
+              <button className="btn-primary" onClick={() => setPresentationMode(false)}>
+                Exit Presentation Mode
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -396,6 +453,11 @@ export default function AttendanceSession() {
               {current?.name}
             </h1>
             <p className="mt-3 text-lg font-semibold text-slate-500">Roll No: {current?.roll_number || '—'}</p>
+            {records[current?.id] && (
+              <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-bold text-slate-600">
+                Already marked {records[current.id].status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next continues
+              </p>
+            )}
           </div>
 
           <div className="mb-6 grid grid-cols-3 gap-3">
@@ -415,17 +477,13 @@ export default function AttendanceSession() {
               onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
               className="btn rounded-2xl bg-emerald-600 py-5 text-2xl font-bold text-white hover:bg-emerald-700 active:bg-emerald-800"
             >
-              Next ✓
+              {index === students.length - 1 ? 'Next & Finish ✓' : 'Next ✓'}
             </button>
           </div>
 
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Keyboard Shortcuts</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-slate-600 sm:grid-cols-3">
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">→ / Space / Enter</span> Present (Next)</div>
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">A</span> Absent</div>
-              <div className="rounded-lg bg-white px-2 py-1.5 text-center"><span className="font-bold text-slate-900">← / Backspace</span> Back</div>
-            </div>
+            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Keyboard Shortcuts</p>
+            <Legend />
           </div>
 
           <div className="mt-4 flex justify-center gap-3">

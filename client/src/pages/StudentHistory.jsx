@@ -47,7 +47,7 @@ export default function StudentHistory() {
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Sessions</p>
         </div>
         <div className="card p-4 text-center">
-          <p className="text-2xl font-black text-brand-600">{pct}%</p>
+          <p className="text-2xl font-black text-brand-600">{total ? `${pct}%` : '—'}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Attendance</p>
         </div>
       </div>

@@ -77,17 +77,14 @@ export function getRiskLevel(value, threshold = DEFAULT_ATTENDANCE_THRESHOLD) {
 
 export function getStudentAttendancePercentage(studentId, sessions = [], recordsBySession = {}) {
   const completed = (sessions || []).filter((session) => session && session.status === 'completed');
-  if (!completed.length) return 0;
+  if (!completed.length) return null;
 
   let present = 0;
-  let total = 0;
   for (const session of completed) {
     const entry = recordsBySession?.[session.id]?.find((record) => record.student_id === studentId);
-    if (!entry) continue;
-    total += 1;
-    if (entry.status === 'present') present += 1;
+    if (entry?.status === 'present') present += 1;
   }
-  return total ? (present / total) * 100 : 0;
+  return (present / completed.length) * 100;
 }
 
 export function getMonthGrid(date = new Date()) {
