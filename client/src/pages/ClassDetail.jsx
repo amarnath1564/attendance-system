@@ -487,19 +487,18 @@ export default function ClassDetail() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Application Number</th>
                       <th className="px-4 py-3">Roll Number</th>
+                      <th className="px-4 py-3">PRN No.</th>
                       <th className="px-4 py-3">Student Name</th>
                       <th className="hidden px-4 py-3 md:table-cell">Email</th>
-                      <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filtered.map((s) => (
                       <tr key={s.id} className={`hover:bg-slate-50/60 ${s.status === STUDENT_STATUS.INACTIVE ? 'opacity-60' : ''}`}>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.roll_number}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2.5">
                             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
@@ -512,9 +511,6 @@ export default function ClassDetail() {
                           </div>
                         </td>
                         <td className="hidden px-4 py-3 text-xs text-slate-500 md:table-cell">{s.email}</td>
-                        <td className="px-4 py-3">
-                          <StatusPill status={s.status} />
-                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end">
                             <Dropdown
