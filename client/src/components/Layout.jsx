@@ -54,9 +54,9 @@ export default function Layout() {
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-200 bg-white py-3">
-          <div className="mx-auto flex max-w-6xl items-center justify-center gap-1 px-4 text-center text-xs text-slate-500">
-            <Icon d={Icons.lock} className="h-3.5 w-3.5" />
+        <footer className="sticky bottom-0 border-t border-slate-200 bg-white py-2">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-1 px-4 text-center text-[11px] text-slate-500">
+            <Icon d={Icons.lock} className="h-3 w-3" />
             Your application data is stored locally on this device. Signed in locally as {teacher?.name || 'demo'}.
           </div>
         </footer>
