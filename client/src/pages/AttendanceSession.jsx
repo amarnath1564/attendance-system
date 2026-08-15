@@ -9,7 +9,6 @@ import {
   upsertRecord,
   getRecordMap,
   deleteRecordByStudent,
-  hasCompletedSessionOnDate,
   getSessionsOnDate,
 } from '../db/repositories.js';
 import { toDateKey, formatDateLabel } from '../lib/utils.js';
@@ -64,12 +63,10 @@ export default function AttendanceSession() {
   const students = useLiveQuery(() => getStudentsForClass(id, { includeInactive: false }), [id]);
   const session = useLiveQuery(() => getInProgressSession(id), [id]);
   const records = useLiveQuery(async () => (session ? getRecordMap(session.id) : {}), [session?.id]);
-  const duplicateToday = useLiveQuery(async () => hasCompletedSessionOnDate(id, toDateKey(new Date())), [id]);
   const todaySessions = useLiveQuery(async () => getSessionsOnDate(id, toDateKey(new Date())), [id]);
 
   const [index, setIndex] = useState(0);
   const [initialized, setInitialized] = useState(false);
-  const [replaceWarn, setReplaceWarn] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
   const [actions, setActions] = useState([]);
   const [sessionName, setSessionName] = useState('');
@@ -110,11 +107,6 @@ export default function AttendanceSession() {
     setIndex(firstUnmarked === -1 ? 0 : firstUnmarked);
     setInitialized(true);
   }, [students, records, initialized]);
-
-  useEffect(() => {
-    if (!duplicateToday || !session) return;
-    setReplaceWarn(true);
-  }, [duplicateToday, session]);
 
   const markedCount = useMemo(() => (records ? Object.keys(records).length : 0), [records]);
   const presentCount = useMemo(
@@ -172,13 +164,6 @@ export default function AttendanceSession() {
     setPresentationMode(true);
     const firstUnmarked = students.findIndex((s) => !records[s.id]);
     if (firstUnmarked !== -1) setIndex(firstUnmarked);
-  };
-
-  const startNew = async () => {
-    setReplaceWarn(false);
-    setInitialized(false);
-    setActions([]);
-    await createSession(id);
   };
 
   useEffect(() => {
@@ -568,22 +553,6 @@ export default function AttendanceSession() {
           </div>
         </div>
       </div>
-
-      <Modal open={replaceWarn} onClose={() => setReplaceWarn(false)} title="Attendance for today already exists" size="sm">
-        <p className="text-sm leading-6 text-slate-600">
-          Today's attendance was already submitted. You can start a new session anyway — only today's records will be
-          affected and previous dates will not be touched. Or cancel and edit the existing session from Attendance
-          History.
-        </p>
-        <div className="mt-6 flex justify-end gap-2">
-          <button className="btn-secondary" onClick={() => setReplaceWarn(false)}>
-            Cancel
-          </button>
-          <button className="btn-primary" onClick={startNew}>
-            Start New Session
-          </button>
-        </div>
-      </Modal>
     </div>
   );
 }
