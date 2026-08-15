@@ -7,7 +7,7 @@ import { fromDateKey, formatDate, getMonthGrid } from '../lib/utils.js';
 import { BackLink, EmptyState, PageHeader } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
 
-function SessionRow({ session, klass, counts }) {
+function SessionRow({ session, klass, counts, sessionLabel }) {
   const navigate = useNavigate();
   const pct = counts.total ? ((counts.present / counts.total) * 100).toFixed(1) : '0.0';
   const day = fromDateKey(session.date);
@@ -23,7 +23,7 @@ function SessionRow({ session, klass, counts }) {
         </span>
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-slate-900">{formatDate(day)}</p>
+        <p className="font-bold text-slate-900">{sessionLabel || formatDate(day)}</p>
         <p className="text-sm text-slate-500">
           {counts.present} / {counts.total} present
         </p>
@@ -75,10 +75,24 @@ export default function AttendanceHistory() {
 
   const rows = useMemo(() => {
     const total = rosterTotal ?? null;
-    return (sessions || []).map((s) => {
+    const sessionList = sessions || [];
+
+    const dayCount = {};
+    for (const s of sessionList) {
+      dayCount[s.date] = (dayCount[s.date] || 0) + 1;
+    }
+
+    const dayIndex = {};
+    return sessionList.map((s) => {
       const recs = allRecords?.[s.id] || [];
+      dayCount[s.date] = dayCount[s.date] || 0;
+      dayIndex[s.date] = (dayIndex[s.date] || 0) + 1;
+      const idx = dayIndex[s.date];
+      const count = dayCount[s.date] || 0;
+      const sessionLabel = count > 1 ? `Session ${idx}` : formatDate(fromDateKey(s.date));
       return {
         session: s,
+        sessionLabel,
         counts: {
           total: total ?? recs.length,
           present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
@@ -187,8 +201,8 @@ export default function AttendanceHistory() {
                 </div>
                 {selectedSessions.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedSessions.map(({ session, counts }) => (
-                      <SessionRow key={session.id} session={session} klass={klass} counts={counts} />
+                    {selectedSessions.map(({ session, counts, sessionLabel }) => (
+                      <SessionRow key={session.id} session={session} klass={klass} counts={counts} sessionLabel={sessionLabel} />
                     ))}
                   </div>
                 ) : (

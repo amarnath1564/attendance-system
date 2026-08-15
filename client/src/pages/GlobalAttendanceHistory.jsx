@@ -7,7 +7,7 @@ import { fromDateKey, formatDate, getMonthGrid } from '../lib/utils.js';
 import { PageHeader, EmptyState } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
 
-function SessionRow({ session, className, counts }) {
+function SessionRow({ session, className, counts, sessionLabel }) {
   const navigate = useNavigate();
   const pct = counts.total ? ((counts.present / counts.total) * 100).toFixed(1) : '0.0';
   const day = fromDateKey(session.date);
@@ -23,7 +23,7 @@ function SessionRow({ session, className, counts }) {
         </span>
       </span>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-slate-900">{formatDate(day)}</p>
+        <p className="font-bold text-slate-900">{sessionLabel || formatDate(day)}</p>
         <p className="text-sm text-slate-500">
           {className} · {counts.present} / {counts.total} present
         </p>
@@ -91,21 +91,35 @@ export default function GlobalAttendanceHistory() {
   const setSelectedDate = (val) => setSearchParams((p) => { const np = new URLSearchParams(p); if (!val) np.delete('date'); else np.set('date', val); return np; });
 
   const rows = useMemo(() => {
-    return (allSessions || [])
-      .filter((s) => selectedClassId === 'all' || s.class_id === selectedClassId)
-      .map((s) => {
-        const recs = allRecords?.[s.id] || [];
-        const total = classRosterCounts?.[s.class_id] ?? recs.length;
-        return {
-          session: s,
-          className: classMap[s.class_id] || 'Unknown Class',
-          counts: {
-            total,
-            present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
-            absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
-          },
-        };
-      });
+    const filtered = (allSessions || [])
+      .filter((s) => selectedClassId === 'all' || s.class_id === selectedClassId);
+
+    const dayClassCount = {};
+    for (const s of filtered) {
+      const key = `${s.date}__${s.class_id}`;
+      dayClassCount[key] = (dayClassCount[key] || 0) + 1;
+    }
+
+    const dayClassIndex = {};
+    return filtered.map((s) => {
+      const recs = allRecords?.[s.id] || [];
+      const total = classRosterCounts?.[s.class_id] ?? recs.length;
+      const key = `${s.date}__${s.class_id}`;
+      const count = dayClassCount[key] || 0;
+      dayClassIndex[key] = (dayClassIndex[key] || 0) + 1;
+      const idx = dayClassIndex[key];
+      const sessionLabel = count > 1 ? `Session ${idx}` : formatDate(fromDateKey(s.date));
+      return {
+        session: s,
+        className: classMap[s.class_id] || 'Unknown Class',
+        sessionLabel,
+        counts: {
+          total,
+          present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
+          absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
+        },
+      };
+    });
   }, [allSessions, allRecords, classMap, classRosterCounts, selectedClassId]);
 
   const sessionByDate = useMemo(() => {
@@ -221,8 +235,8 @@ export default function GlobalAttendanceHistory() {
                 </div>
                 {selectedSessions.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedSessions.map(({ session, className, counts }) => (
-                      <SessionRow key={session.id} session={session} className={className} counts={counts} />
+                    {selectedSessions.map(({ session, className, counts, sessionLabel }) => (
+                      <SessionRow key={session.id} session={session} className={className} counts={counts} sessionLabel={sessionLabel} />
                     ))}
                   </div>
                 ) : (
