@@ -58,10 +58,10 @@ function ClassCard({ klass, navigate, onDelete }) {
       <div className="flex items-start justify-between gap-2">
         <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 text-left">
           <h3 className="truncate text-lg font-bold text-slate-900">
-            {klass.class_name}{klass.year ? ` · Year ${klass.year}` : ''}
+            {klass.class_name}
           </h3>
           <p className="text-sm font-medium text-slate-500">
-            {klass.semester ? `Semester ${klass.semester}` : ''}{klass.section ? `${klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
+            {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Semester ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
           </p>
         </button>
         <Dropdown items={menu} />
