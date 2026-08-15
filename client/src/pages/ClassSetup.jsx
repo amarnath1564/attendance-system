@@ -269,32 +269,36 @@ export default function ClassSetup() {
             </div>
           )}
 
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              className="btn-primary flex-1 py-3"
-              disabled={busy}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Icon d={Icons.upload} className="h-4 w-4" /> Upload CSV
-            </button>
-            <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onCsv} />
-            <button
-              type="button"
-              className="btn-secondary flex-1 py-3"
-              disabled={busy}
-              onClick={() => importFileRef.current?.click()}
-            >
-              <Icon d={Icons.upload} className="h-4 w-4" /> Import Existing Class
-            </button>
+          {!editing && (
+            <>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  className="btn-primary flex-1 py-3"
+                  disabled={busy}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <Icon d={Icons.upload} className="h-4 w-4" /> Upload CSV
+                </button>
+                <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={onCsv} />
+                <button
+                  type="button"
+                  className="btn-secondary flex-1 py-3"
+                  disabled={busy}
+                  onClick={() => importFileRef.current?.click()}
+                >
+                  <Icon d={Icons.upload} className="h-4 w-4" /> Import Existing Class
+                </button>
             <input ref={importFileRef} type="file" accept=".json,application/json" className="hidden" onChange={onImportClass} />
-          </div>
-          <p className="text-xs leading-5 text-slate-500">
-            The CSV should have columns: Application Number, Roll Number, Student Name. Email and Status are optional.
-          </p>
-          <p className="text-xs leading-5 text-slate-500">
-            Import Existing Class: Upload a previously exported class JSON file to restore class details and students.
-          </p>
+              </div>
+              <p className="text-xs leading-5 text-slate-500">
+                The CSV should have columns: Application Number, Roll Number, Student Name. Email and Status are optional.
+              </p>
+              <p className="text-xs leading-5 text-slate-500">
+                Import Existing Class: Upload a previously exported class JSON file to restore class details and students.
+              </p>
+            </>
+          )}
 
           <div className="border-t border-slate-100 pt-4">
             <button type="button" className="btn-ghost w-full text-sm" disabled={busy} onClick={skipImport}>
