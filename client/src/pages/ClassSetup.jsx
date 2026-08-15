@@ -54,6 +54,8 @@ export default function ClassSetup() {
 
   const [name, setName] = useState('');
   const [section, setSection] = useState('');
+  const [year, setYear] = useState('');
+  const [semester, setSemester] = useState('');
   const [threshold, setThreshold] = useState(75);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -63,6 +65,8 @@ export default function ClassSetup() {
     if (klass && !preview && !name) {
       setName(klass.class_name || '');
       setSection(klass.section || '');
+      setYear(klass.year || '');
+      setSemester(klass.semester || '');
       setThreshold(klass.attendance_threshold ?? 75);
     }
   }, [klass, preview, name]);
@@ -75,10 +79,10 @@ export default function ClassSetup() {
     try {
       let classId = id;
       if (!classId) {
-        const created = await addClass({ class_name: name, section, attendance_threshold: threshold });
+        const created = await addClass({ class_name: name, section, year, semester, attendance_threshold: threshold });
         classId = created.id;
       } else {
-        await updateClass(classId, { class_name: name, section, attendance_threshold: threshold });
+        await updateClass(classId, { class_name: name, section, year, semester, attendance_threshold: threshold });
       }
       await bulkImportStudents(classId, students);
       pushToast({
@@ -132,10 +136,10 @@ export default function ClassSetup() {
     setBusy(true);
     try {
       if (editing) {
-        await updateClass(id, { class_name: name, section, attendance_threshold: threshold });
+        await updateClass(id, { class_name: name, section, year, semester, attendance_threshold: threshold });
         navigate(`/classes/${id}`);
       } else {
-        const created = await addClass({ class_name: name, section, attendance_threshold: threshold });
+        const created = await addClass({ class_name: name, section, year, semester, attendance_threshold: threshold });
         navigate(`/classes/${created.id}`);
       }
     } finally {
@@ -185,6 +189,38 @@ export default function ClassSetup() {
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Year</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4].map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  className={`select-box ${year === String(y) ? 'select-box-active' : ''}`}
+                  onClick={() => setYear(year === String(y) ? '' : String(y))}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="label">Semester</label>
+            <div className="flex gap-2">
+              {['A', 'B'].map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  className={`select-box ${semester === s ? 'select-box-active' : ''}`}
+                  onClick={() => setSemester(semester === s ? '' : s)}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           </div>
 

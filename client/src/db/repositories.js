@@ -41,11 +41,13 @@ export async function updateTeacher(partial) {
 }
 
 // ---------------------------------------------------------------- Classes
-export async function addClass({ class_name, section, attendance_threshold }) {
+export async function addClass({ class_name, section, attendance_threshold, year, semester }) {
   const klass = {
     id: uid('cls'),
     class_name: class_name.trim(),
     section: (section || '').trim(),
+    year: year || '',
+    semester: semester || '',
     attendance_threshold: Number.isFinite(Number(attendance_threshold)) ? Number(attendance_threshold) : 75,
     created_at: nowIso(),
     updated_at: nowIso(),
@@ -60,6 +62,8 @@ export async function updateClass(id, partial) {
   const next = {
     ...klass,
     ...partial,
+    year: partial.year !== undefined ? partial.year : klass.year,
+    semester: partial.semester !== undefined ? partial.semester : klass.semester,
     attendance_threshold:
       partial.attendance_threshold !== undefined
         ? Number.isFinite(Number(partial.attendance_threshold))

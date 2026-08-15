@@ -42,6 +42,15 @@
   .card {
     @apply rounded-2xl border border-slate-200 bg-white shadow-card;
   }
+  .select-box {
+    @apply flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700
+      transition hover:border-brand-400 hover:text-brand-600
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
+      disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .select-box-active {
+    @apply border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 hover:text-white;
+  }
 }
 
 @keyframes fadeIn {

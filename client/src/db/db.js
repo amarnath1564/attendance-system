@@ -57,4 +57,13 @@ db.version(4).stores({
   attendance_records: 'id, attendance_session_id, student_id, status, [attendance_session_id+student_id]',
 });
 
+db.version(5).stores({
+  settings: 'key',
+  teachers: 'id',
+  classes: 'id, name, class_name, created_at, year, semester',
+  students: 'id, class_id, status, [class_id+status], [class_id+application_number]',
+  attendance_sessions: 'id, class_id, date, status, [class_id+date], [class_id+status]',
+  attendance_records: 'id, attendance_session_id, student_id, status, [attendance_session_id+student_id]',
+});
+
 export default db;

@@ -33,7 +33,12 @@ export default function SessionDetail() {
       <div className="mt-4">
         <PageHeader
           title={formatDate(date)}
-          subtitle={`${klass.class_name}${klass.section ? ` · ${klass.section}` : ''}`}
+          subtitle={(() => {
+            const parts = [klass.class_name];
+            if (klass.section) parts.push(klass.section);
+            if (klass.year || klass.semester) parts.push(`Year ${klass.year || '—'} · Semester ${klass.semester || '—'}`);
+            return parts.join(' · ');
+          })()}
         />
       </div>
 

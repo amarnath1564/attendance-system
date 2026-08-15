@@ -257,7 +257,13 @@ export default function ClassDetail() {
       <PageHeader
         title={klass.class_name}
         subtitle={
-          klass.section ? `${klass.section} · ${activeCount} active student${activeCount === 1 ? '' : 's'}` : `${activeCount} active student${activeCount === 1 ? '' : 's'}`
+          (() => {
+            const parts = [];
+            if (klass.section) parts.push(klass.section);
+            if (klass.year || klass.semester) parts.push(`Year ${klass.year || '—'} · Semester ${klass.semester || '—'}`);
+            parts.push(`${activeCount} active student${activeCount === 1 ? '' : 's'}`);
+            return parts.join(' · ');
+          })()
         }
       />
 

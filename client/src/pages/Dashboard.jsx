@@ -48,6 +48,11 @@ function ClassCard({ klass, navigate, onDelete }) {
         <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 text-left">
           <h3 className="truncate text-lg font-bold text-slate-900">{klass.class_name}</h3>
           {klass.section && <p className="text-sm font-medium text-slate-500">{klass.section}</p>}
+          {(klass.year || klass.semester) && (
+            <p className="text-xs font-medium text-slate-400">
+              Year {klass.year || '—'}{klass.year && klass.semester ? ' · ' : ''}Semester {klass.semester || '—'}
+            </p>
+          )}
         </button>
         <Dropdown items={menu} />
       </div>
