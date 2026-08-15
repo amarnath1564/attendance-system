@@ -73,16 +73,17 @@ export default function AttendanceSession() {
   const [presentationMode, setPresentationMode] = useState(false);
   const [actions, setActions] = useState([]);
   const [sessionName, setSessionName] = useState('');
-  const [showNameModal, setShowNameModal] = useState(false);
+  const [showNamePage, setShowNamePage] = useState(false);
+  const [nameSubmitted, setNameSubmitted] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
   const onKeyRef = useRef(() => {});
 
   useEffect(() => {
-    if (session || creating.current) return;
+    if (session || creating.current || nameSubmitted) return;
     if (todaySessions && todaySessions.length > 0) {
       setSessionName(`Session ${todaySessions.length + 1}`);
-      setShowNameModal(true);
+      setShowNamePage(true);
     } else {
       creating.current = true;
       createSession(id)
@@ -91,10 +92,11 @@ export default function AttendanceSession() {
           creating.current = false;
         });
     }
-  }, [session, todaySessions]);
+  }, [session, todaySessions, nameSubmitted]);
 
   const startSessionWithName = async () => {
-    setShowNameModal(false);
+    setShowNamePage(false);
+    setNameSubmitted(true);
     creating.current = true;
     createSession(id, sessionName.trim() || undefined)
       .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
@@ -430,6 +432,51 @@ export default function AttendanceSession() {
     );
   }
 
+  if (showNamePage) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-slate-100">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 py-6">
+          <div className="card w-full p-8">
+            <div className="text-center">
+              <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
+                <Icon d={Icons.clipboard} className="h-6 w-6 text-brand-600" />
+              </span>
+              <h1 className="text-xl font-bold text-slate-900">Name This Session</h1>
+              <p className="mt-2 text-sm text-slate-500">
+                You already have a session today. Enter a name or use the default.
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="label" htmlFor="session-name">
+                Session Name
+              </label>
+              <input
+                id="session-name"
+                className="input"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                autoFocus
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Default: {sessionName}
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+              <button className="btn-primary w-full py-3" onClick={startSessionWithName}>
+                Start Session
+              </button>
+              <button className="btn-ghost w-full" onClick={() => navigate('/')}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-slate-100">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-4 py-6">
@@ -531,32 +578,6 @@ export default function AttendanceSession() {
           </button>
           <button className="btn-primary" onClick={startNew}>
             Start New Session
-          </button>
-        </div>
-      </Modal>
-
-      <Modal open={showNameModal} onClose={() => { setShowNameModal(false); navigate('/'); }} title="Name this session" size="sm">
-        <p className="text-sm leading-6 text-slate-600">
-          You already have a session today. Enter a name for this new session or use the default.
-        </p>
-        <div className="mt-4">
-          <label className="label" htmlFor="session-name">
-            Session Name
-          </label>
-          <input
-            id="session-name"
-            className="input"
-            value={sessionName}
-            onChange={(e) => setSessionName(e.target.value)}
-            autoFocus
-          />
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button className="btn-secondary" onClick={() => { setShowNameModal(false); navigate('/'); }}>
-            Cancel
-          </button>
-          <button className="btn-primary" onClick={startSessionWithName}>
-            Start Session
           </button>
         </div>
       </Modal>
