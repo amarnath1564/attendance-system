@@ -165,19 +165,20 @@ export default function ClassSetup() {
 
       {step === 'form' && (
         <div className="card space-y-5 p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="label" htmlFor="cls-name">
-                Class Name
-              </label>
-              <input
-                id="cls-name"
-                className="input"
-                placeholder="Data Structures"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
+          <div>
+            <label className="label" htmlFor="cls-name">
+              Class Name
+            </label>
+            <input
+              id="cls-name"
+              className="input"
+              placeholder="Data Structures"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-4">
             <div>
               <label className="label">Year</label>
               <div className="flex gap-2">
@@ -185,7 +186,7 @@ export default function ClassSetup() {
                   <button
                     key={y}
                     type="button"
-                    className={`select-box ${year === String(y) ? 'select-box-active' : ''}`}
+                    className={`select-box flex-1 ${year === String(y) ? 'select-box-active' : ''}`}
                     onClick={() => setYear(year === String(y) ? '' : String(y))}
                   >
                     {y}
@@ -193,9 +194,6 @@ export default function ClassSetup() {
                 ))}
               </div>
             </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Semester</label>
               <div className="flex gap-2">
@@ -203,7 +201,7 @@ export default function ClassSetup() {
                   <button
                     key={s}
                     type="button"
-                    className={`select-box ${semester === s ? 'select-box-active' : ''}`}
+                    className={`select-box flex-1 ${semester === s ? 'select-box-active' : ''}`}
                     onClick={() => setSemester(semester === s ? '' : s)}
                   >
                     {s}
@@ -224,22 +222,21 @@ export default function ClassSetup() {
                 onChange={(e) => setSection(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="max-w-xs">
-            <label className="label" htmlFor="cls-threshold">
-              Attendance Risk Threshold (%)
-            </label>
-            <input
-              id="cls-threshold"
-              className="input"
-              type="number"
-              min="0"
-              max="100"
-              step="1"
-              value={threshold}
-              onChange={(e) => setThreshold(Number(e.target.value) || 0)}
-            />
+            <div>
+              <label className="label" htmlFor="cls-threshold">
+                Attendance Risk Threshold (%)
+              </label>
+              <input
+                id="cls-threshold"
+                className="input"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={threshold}
+                onChange={(e) => setThreshold(Number(e.target.value) || 0)}
+              />
+            </div>
           </div>
 
           {error && (
