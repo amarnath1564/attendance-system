@@ -287,7 +287,7 @@ export default function ClassSetup() {
                   disabled={busy}
                   onClick={() => importFileRef.current?.click()}
                 >
-                  <Icon d={Icons.upload} className="h-4 w-4" /> Import Existing Class
+                  <Icon d={Icons.upload} className="h-4 w-4" /> Import Existing JSON
                 </button>
             <input ref={importFileRef} type="file" accept=".json,application/json" className="hidden" onChange={onImportClass} />
               </div>
