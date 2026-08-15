@@ -60,23 +60,9 @@ function ClassCard({ klass, navigate, onDelete }) {
           <h3 className="truncate text-lg font-bold text-slate-900">
             {klass.class_name}
           </h3>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            {klass.year && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                Year {klass.year}
-              </span>
-            )}
-            {klass.semester && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                Semester {klass.semester}
-              </span>
-            )}
-            {klass.section && (
-              <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-                Section {klass.section}
-              </span>
-            )}
-          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Semester ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
+          </p>
         </button>
         <Dropdown items={menu} />
       </div>
@@ -144,23 +130,9 @@ function ClassListItem({ klass, navigate, onDelete }) {
         <h3 className="truncate text-base font-bold text-slate-900">
           {klass.class_name}
         </h3>
-        <div className="mt-1 flex flex-wrap gap-1.5">
-          {klass.year && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              Year {klass.year}
-            </span>
-          )}
-          {klass.semester && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              Semester {klass.semester}
-            </span>
-          )}
-          {klass.section && (
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              Section {klass.section}
-            </span>
-          )}
-        </div>
+        <p className="mt-1 text-sm text-slate-500">
+          {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Semester ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
+        </p>
         <div className="mt-1.5 flex items-center gap-4 text-sm text-slate-500">
           <span className="flex items-center gap-1">
             <Icon d={Icons.users} className="h-3.5 w-3.5 text-slate-400" />
