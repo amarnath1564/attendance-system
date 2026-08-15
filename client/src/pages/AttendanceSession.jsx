@@ -452,7 +452,7 @@ export default function AttendanceSession() {
         </div>
         <div className="mb-6 h-3 w-full overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-300"
+            className="h-full rounded-full bg-brand-600 transition-all duration-300"
             style={{ width: `${progressPct}%` }}
           />
         </div>
@@ -494,7 +494,7 @@ export default function AttendanceSession() {
             </button>
             <button
               onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
-              className="btn rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 py-5 text-2xl font-bold text-white shadow-lg hover:from-emerald-600 hover:to-green-700 active:from-emerald-700 active:to-green-800"
+              className="btn rounded-2xl bg-emerald-600 py-5 text-2xl font-bold text-white hover:bg-emerald-700 active:bg-emerald-800"
             >
               {index === students.length - 1 ? 'Next & Finish ✓' : 'Next ✓'}
             </button>

@@ -20,15 +20,13 @@
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-brand-glow
-      hover:from-blue-600 hover:to-indigo-700 hover:shadow-lg active:from-blue-700 active:to-indigo-800;
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
   }
   .btn-secondary {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100;
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100;
   }
   .btn-danger {
-    @apply btn bg-gradient-to-r from-rose-500 to-red-600 text-white
-      hover:from-rose-600 hover:to-red-700 active:from-rose-700 active:to-red-800;
+    @apply btn bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800;
   }
   .btn-ghost {
     @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
@@ -53,8 +51,7 @@
       disabled:cursor-not-allowed disabled:opacity-50;
   }
   .select-box-active {
-    @apply bg-gradient-to-r from-blue-500 to-indigo-600 border-transparent text-white
-      hover:from-blue-600 hover:to-indigo-700;
+    @apply border-brand-600 bg-brand-600 text-white hover:border-brand-700 hover:bg-brand-700 hover:text-white;
   }
 }
 
