@@ -1,0 +1,227 @@
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
+import db, { RECORD_STATUS } from '../db/db.js';
+import { getStudentsForClass } from '../db/repositories.js';
+import { fromDateKey, formatDate, getMonthGrid } from '../lib/utils.js';
+import { PageHeader, EmptyState } from '../components/ui.jsx';
+import { Icons, Icon } from '../components/icons.jsx';
+
+function SessionRow({ session, className, counts }) {
+  const navigate = useNavigate();
+  const pct = counts.total ? ((counts.present / counts.total) * 100).toFixed(1) : '0.0';
+  const day = fromDateKey(session.date);
+  return (
+    <button
+      onClick={() => navigate(`/classes/${session.class_id}/history/${session.id}`)}
+      className="card flex w-full items-center gap-4 p-4 text-left transition hover:shadow-lift"
+    >
+      <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+        <span className="text-lg font-black leading-none">{day.getDate()}</span>
+        <span className="text-[10px] font-bold uppercase">
+          {day.toLocaleDateString('en-US', { month: 'short' })}
+        </span>
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="font-bold text-slate-900">{formatDate(day)}</p>
+        <p className="text-sm text-slate-500">
+          {className} · {counts.present} / {counts.total} present
+        </p>
+      </div>
+      <div className="flex items-center gap-3">
+        <span
+          className={`rounded-full px-3 py-1 text-sm font-bold ${
+            Number(pct) >= 75 ? 'bg-emerald-50 text-emerald-700' : Number(pct) >= 50 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'
+          }`}
+        >
+          {pct}%
+        </span>
+        <Icon d={Icons.arrowLeft} className="h-4 w-4 rotate-180 text-slate-400" />
+      </div>
+    </button>
+  );
+}
+
+export default function GlobalAttendanceHistory() {
+  const navigate = useNavigate();
+  const classes = useLiveQuery(() => db.classes.toArray(), []);
+  const allSessions = useLiveQuery(async () => {
+    if (!classes || classes.length === 0) return [];
+    const classIds = classes.map((c) => c.id);
+    const sessions = await db.attendance_sessions.where('class_id').anyOf(classIds).toArray();
+    return sessions.sort((a, b) => b.date.localeCompare(a.date));
+  }, [classes]);
+
+  const allRecords = useLiveQuery(async () => {
+    if (!allSessions || allSessions.length === 0) return {};
+    const ids = allSessions.map((s) => s.id);
+    const recs = await db.attendance_records.where('attendance_session_id').anyOf(ids).toArray();
+    const map = {};
+    for (const r of recs) {
+      if (!map[r.attendance_session_id]) map[r.attendance_session_id] = [];
+      map[r.attendance_session_id].push(r);
+    }
+    return map;
+  }, [allSessions]);
+
+  const classMap = useMemo(() => {
+    const map = {};
+    for (const c of classes || []) map[c.id] = c.class_name;
+    return map;
+  }, [classes]);
+
+  const classRosterCounts = useLiveQuery(async () => {
+    if (!classes || classes.length === 0) return {};
+    const map = {};
+    for (const c of classes) {
+      const students = await getStudentsForClass(c.id, { includeInactive: false });
+      map[c.id] = students.length;
+    }
+    return map;
+  }, [classes]);
+
+  const [month, setMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const rows = useMemo(() => {
+    return (allSessions || []).map((s) => {
+      const recs = allRecords?.[s.id] || [];
+      const total = classRosterCounts?.[s.class_id] ?? recs.length;
+      return {
+        session: s,
+        className: classMap[s.class_id] || 'Unknown Class',
+        counts: {
+          total,
+          present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
+          absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
+        },
+      };
+    });
+  }, [allSessions, allRecords, classMap, classRosterCounts]);
+
+  const sessionByDate = useMemo(() => {
+    const map = {};
+    for (const row of rows) {
+      if (!map[row.session.date]) map[row.session.date] = [];
+      map[row.session.date].push(row);
+    }
+    return map;
+  }, [rows]);
+
+  const selectedSessions = selectedDate ? sessionByDate[selectedDate] || [] : [];
+
+  const monthGrid = useMemo(() => getMonthGrid(month), [month]);
+  const monthLabel = new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(month);
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8">
+      <PageHeader title="Attendance History" subtitle="All classes" />
+
+      {rows.length > 0 ? (
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="card p-4 sm:p-5 lg:w-[520px] shrink-0">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+                  Previous Month
+                </button>
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date())}>Today</button>
+                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
+                  Next Month
+                </button>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-black text-slate-900">{monthLabel}</p>
+                <p className="text-xs text-slate-500">Local attendance records</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                <div key={day} className="py-2">{day}</div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-7 gap-1">
+              {monthGrid.cells.map((date) => {
+                const key = date.toISOString().slice(0, 10);
+                const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const hasSessions = !!sessionByDate[dayKey];
+                const isCurrentMonth = date.getMonth() === month.getMonth();
+                const isToday = key === new Date().toISOString().slice(0, 10);
+                const isSelected = selectedDate === dayKey;
+                const sessions = sessionByDate[dayKey] || [];
+                const totalCount = sessions.reduce((sum, s) => sum + s.counts.total, 0);
+                const totalPresent = sessions.reduce((sum, s) => sum + s.counts.present, 0);
+                const totalAbsent = sessions.reduce((sum, s) => sum + s.counts.absent, 0);
+                return (
+                  <button
+                    key={`${dayKey}-cell`}
+                    disabled={!hasSessions}
+                    onClick={() => setSelectedDate(isSelected ? null : dayKey)}
+                    className={[
+                      'relative flex min-h-[64px] flex-col rounded-lg border p-1 text-left transition',
+                      isCurrentMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 text-slate-400',
+                      isToday ? 'ring-2 ring-brand-300' : '',
+                      hasSessions ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50',
+                      isSelected ? 'ring-2 ring-brand-500 border-brand-300' : '',
+                    ].join(' ')}
+                  >
+                    <span className="text-xs font-bold">{date.getDate()}</span>
+                    {hasSessions ? (
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700">
+                          <span>{totalPresent}</span>
+                          <span>✓</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500">{totalAbsent} absent</div>
+                      </div>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            {selectedDate ? (
+              <>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-slate-900">{formatDate(fromDateKey(selectedDate))}</h3>
+                  <button className="btn-secondary text-sm" onClick={() => setSelectedDate(null)}>
+                    <Icon d={Icons.x} className="h-4 w-4" /> Close
+                  </button>
+                </div>
+                {selectedSessions.length > 0 ? (
+                  <div className="space-y-3">
+                    {selectedSessions.map(({ session, className, counts }) => (
+                      <SessionRow key={session.id} session={session} className={className} counts={counts} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="card flex flex-col items-center justify-center p-8 text-center">
+                    <Icon d={Icons.history} className="h-10 w-10 text-slate-300" />
+                    <p className="mt-3 font-semibold text-slate-700">No sessions found</p>
+                    <p className="text-sm text-slate-500">No attendance was taken on this date.</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="card flex flex-col items-center justify-center p-8 text-center">
+                <Icon d={Icons.calendar} className="h-10 w-10 text-slate-300" />
+                <p className="mt-3 font-semibold text-slate-700">Select a date</p>
+                <p className="text-sm text-slate-500">Click a day on the calendar to view its sessions.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <EmptyState
+          icon={Icons.history}
+          title="No attendance recorded yet"
+          message="Attendance you submit will appear here, stored locally on this device."
+        />
+      )}
+    </div>
+  );
+}

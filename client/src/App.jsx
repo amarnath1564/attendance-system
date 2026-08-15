@@ -10,6 +10,7 @@ import ClassDetail from './pages/ClassDetail.jsx';
 import AttendanceSession from './pages/AttendanceSession.jsx';
 import AttendanceReview from './pages/AttendanceReview.jsx';
 import AttendanceHistory from './pages/AttendanceHistory.jsx';
+import GlobalAttendanceHistory from './pages/GlobalAttendanceHistory.jsx';
 import SessionDetail from './pages/SessionDetail.jsx';
 import StudentHistory from './pages/StudentHistory.jsx';
 import Settings from './pages/Settings.jsx';
@@ -61,6 +62,7 @@ export default function App() {
           }
         >
           <Route path="/" element={<Dashboard />} />
+          <Route path="/history" element={<GlobalAttendanceHistory />} />
           <Route path="/classes/new" element={<ClassSetup />} />
           <Route path="/classes/:id/edit" element={<ClassSetup />} />
           <Route path="/classes/:id" element={<ClassDetail />} />

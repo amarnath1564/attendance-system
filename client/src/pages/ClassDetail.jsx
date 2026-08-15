@@ -122,6 +122,7 @@ export default function ClassDetail() {
     return map;
   }, [sessions]);
 
+  const [tab, setTab] = useState('overview');
   const [search, setSearch] = useState('');
   const [showInactive, setShowInactive] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
@@ -190,6 +191,49 @@ export default function ClassDetail() {
     };
   }, [allStudents, sessions, attendanceRecords, threshold]);
 
+  const extraStats = useMemo(() => {
+    const completedSessions = (sessions || []).filter((s) => s.status === 'completed');
+    if (completedSessions.length === 0) return null;
+
+    const sessionCounts = completedSessions.map((session) => {
+      const records = attendanceRecords?.[session.id] || [];
+      const present = records.filter((r) => r.status === RECORD_STATUS.PRESENT).length;
+      const absent = records.filter((r) => r.status === RECORD_STATUS.ABSENT).length;
+      const total = present + absent;
+      return { session, present, absent, total, rate: total ? (present / total) * 100 : 0 };
+    });
+
+    const sorted = [...sessionCounts].sort((a, b) => a.rate - b.rate);
+    const bestSession = sorted[sorted.length - 1];
+    const worstSession = sorted[0];
+
+    const dayMap = { 0: 'Sun', 1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat' };
+    const dayCounts = {};
+    for (const s of completedSessions) {
+      const day = new Date(s.date.split('-').join('/')).getDay();
+      const name = dayMap[day];
+      if (!dayCounts[name]) dayCounts[name] = { count: 0, totalPresent: 0 };
+      dayCounts[name].count++;
+      const records = attendanceRecords?.[s.id] || [];
+      dayCounts[name].totalPresent += records.filter((r) => r.status === RECORD_STATUS.PRESENT).length;
+    }
+    const bestDay = Object.entries(dayCounts)
+      .map(([day, v]) => ({ day, rate: v.count ? (v.totalPresent / v.count) : 0 }))
+      .sort((a, b) => b.rate - a.rate)[0];
+
+    const activeStudents = (allStudents || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE);
+    const perfectCount = classStats.percentages.filter((p) => p.percentage === 100 && p.totalSessions > 0).length;
+
+    return {
+      totalSessions: completedSessions.length,
+      bestSession,
+      worstSession,
+      bestDay,
+      perfectCount,
+      totalStudents: activeStudents.length,
+    };
+  }, [sessions, attendanceRecords, allStudents, classStats]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (allStudents || []).filter((s) => {
@@ -248,6 +292,12 @@ export default function ClassDetail() {
     });
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'students', label: 'Student Details' },
+    { id: 'stats', label: 'Stats' },
+  ];
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-4">
@@ -259,7 +309,7 @@ export default function ClassDetail() {
         subtitle={
           (() => {
             const parts = [];
-            if (klass.section) parts.push(klass.section);
+            if (klass.section) parts.push(`Section ${klass.section}`);
             if (klass.year || klass.semester) parts.push(`Year ${klass.year || '—'} · Semester ${klass.semester || '—'}`);
             parts.push(`${activeCount} active student${activeCount === 1 ? '' : 's'}`);
             return parts.join(' · ');
@@ -267,206 +317,301 @@ export default function ClassDetail() {
         }
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-6 flex flex-wrap items-center gap-2">
         <button className="btn-primary" onClick={() => navigate(`/classes/${id}/attendance`)}>
           <Icon d={Icons.clipboard} className="h-4 w-4" /> Take Attendance
         </button>
         <button className="btn-secondary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
           <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
         </button>
-        <Link to={`/classes/${id}/history`} className="btn-secondary">
-          <Icon d={Icons.history} className="h-4 w-4" /> Attendance History
-        </Link>
+        {tab === 'students' && (
+          <>
+            <span className="flex-1" />
+            <button className="btn-secondary" onClick={exportClassRoster}>
+              <Icon d={Icons.download} className="h-4 w-4" /> Export Roster
+            </button>
+            <button className="btn-secondary" onClick={exportAttendanceCsv}>
+              <Icon d={Icons.download} className="h-4 w-4" /> Export CSV
+            </button>
+          </>
+        )}
       </div>
 
-      <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
-        <div className="card p-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Class Snapshot</p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Students</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{activeCount}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Attendance</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">{classStats.lastSessionDate ? formatDate(new Date(classStats.lastSessionDate.split('-').join('/'))) : '—'}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Session</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">
-                {classStats.lastSession ? `${classStats.lastPresent} Present · ${classStats.lastAbsent} Absent` : '—'}
-              </p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Average Attendance</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? `${classStats.average.toFixed(1)}%` : '—'}</p>
-            </div>
-            <div className="rounded-xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Below {threshold}%</p>
-              <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? classStats.belowThreshold : '—'}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="card p-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Attendance Risk</p>
-          <div className="mt-4 space-y-3">
-            <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-              <span>✓ Safe</span>
-              <span className="font-black">{classStats.risk.safe}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              <span>⚠ At Risk</span>
-              <span className="font-black">{classStats.risk.atRisk}</span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">
-              <span>● Critical</span>
-              <span className="font-black">{classStats.risk.critical}</span>
-            </div>
-          </div>
-        </div>
+      <div className="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
+        {tabs.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              tab === t.id
+                ? 'bg-white text-slate-900 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div className="mb-6 card p-4">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Student Risk</p>
-          <span className="text-xs text-slate-500">Threshold: {threshold}%</span>
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          {(allStudents || []).filter((student) => student.status === STUDENT_STATUS.ACTIVE).map((student) => {
-            const item = classStats.percentages.find((entry) => entry.student.id === student.id);
-            const pct = item?.percentage ?? 0;
-            const noData = item?.totalSessions === 0;
-            const risk = getRiskLevel(pct, threshold);
-            const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
-            return (
-              <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900">{student.name}</p>
-                  <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
+      {tab === 'overview' && (
+        <>
+          <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
+            <div className="card p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Class Snapshot</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Students</p>
+                  <p className="mt-1 text-2xl font-black text-slate-900">{activeCount}</p>
                 </div>
-                <div className="text-right">
-                  {noData ? (
-                    <p className="text-xs font-semibold text-slate-400">No attendance data</p>
-                  ) : (
-                    <>
-                      <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
-                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
-                        {risk.icon} {risk.label}
-                      </span>
-                    </>
-                  )}
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Attendance</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">{classStats.lastSessionDate ? formatDate(new Date(classStats.lastSessionDate.split('-').join('/'))) : '—'}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Last Session</p>
+                  <p className="mt-1 text-sm font-bold text-slate-900">
+                    {classStats.lastSession ? `${classStats.lastPresent} Present · ${classStats.lastAbsent} Absent` : '—'}
+                  </p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Average Attendance</p>
+                  <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? `${classStats.average.toFixed(1)}%` : '—'}</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Below {threshold}%</p>
+                  <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? classStats.belowThreshold : '—'}</p>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
+            </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <button className="btn-secondary" onClick={exportClassRoster}>
-          <Icon d={Icons.download} className="h-4 w-4" /> Export Student Roster
-        </button>
-        <button className="btn-secondary" onClick={exportAttendanceCsv}>
-          <Icon d={Icons.download} className="h-4 w-4" /> Export Attendance CSV
-        </button>
-      </div>
+            <div className="card p-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Attendance Risk</p>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  <span>✓ Safe</span>
+                  <span className="font-black">{classStats.risk.safe}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  <span>⚠ At Risk</span>
+                  <span className="font-black">{classStats.risk.atRisk}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                  <span>● Critical</span>
+                  <span className="font-black">{classStats.risk.critical}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      <div className="card mb-6 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-sm">
-          <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-            <Icon d={Icons.users} className="h-4 w-4" />
-          </span>
-          <input
-            className="input pl-9"
-            placeholder="Search students…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-          />
-          Show inactive
-        </label>
-      </div>
+          <div className="mb-6 card p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Student Risk</p>
+              <span className="text-xs text-slate-500">Threshold: {threshold}%</span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {(allStudents || []).filter((student) => student.status === STUDENT_STATUS.ACTIVE).map((student) => {
+                const item = classStats.percentages.find((entry) => entry.student.id === student.id);
+                const pct = item?.percentage ?? 0;
+                const noData = item?.totalSessions === 0;
+                const risk = getRiskLevel(pct, threshold);
+                const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
+                return (
+                  <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-slate-900">{student.name}</p>
+                      <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
+                    </div>
+                    <div className="text-right">
+                      {noData ? (
+                        <p className="text-xs font-semibold text-slate-400">No attendance data</p>
+                      ) : (
+                        <>
+                          <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
+                            {risk.icon} {risk.label}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
-      {filtered.length > 0 ? (
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">Application Number</th>
-                  <th className="px-4 py-3">Roll Number</th>
-                  <th className="px-4 py-3">Student Name</th>
-                  <th className="hidden px-4 py-3 md:table-cell">Email</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((s) => (
-                  <tr key={s.id} className={`hover:bg-slate-50/60 ${s.status === STUDENT_STATUS.INACTIVE ? 'opacity-60' : ''}`}>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.roll_number}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
-                          {s.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900">{s.name}</p>
-                          <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
+      {tab === 'students' && (
+        <>
+          <div className="card mb-2 flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="relative w-full sm:max-w-sm">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                <Icon d={Icons.users} className="h-4 w-4" />
+              </span>
+              <input
+                className="input pl-9"
+                placeholder="Search students…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              Show inactive
+            </label>
+          </div>
+
+          {filtered.length > 0 ? (
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <tr>
+                      <th className="px-4 py-3">Application Number</th>
+                      <th className="px-4 py-3">Roll Number</th>
+                      <th className="px-4 py-3">Student Name</th>
+                      <th className="hidden px-4 py-3 md:table-cell">Email</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filtered.map((s) => (
+                      <tr key={s.id} className={`hover:bg-slate-50/60 ${s.status === STUDENT_STATUS.INACTIVE ? 'opacity-60' : ''}`}>
+                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.roll_number}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700">
+                              {s.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-slate-900">{s.name}</p>
+                              <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="hidden px-4 py-3 text-xs text-slate-500 md:table-cell">{s.email}</td>
+                        <td className="px-4 py-3">
+                          <StatusPill status={s.status} />
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-end">
+                            <Dropdown
+                              align="right"
+                              items={[
+                                { label: 'Edit', icon: Icons.pencil, onClick: () => { setEditingStudent(s); setFormOpen(true); } },
+                                { label: 'View Attendance', icon: Icons.history, onClick: () => navigate(`/classes/${id}/students/${s.id}`) },
+                                { divider: true },
+                                s.status === STUDENT_STATUS.ACTIVE
+                                  ? { label: 'Remove', icon: Icons.trash, danger: true, onClick: () => setRemoving(s) }
+                                  : { label: 'Restore', icon: Icons.check, onClick: () => restoreStudent(s) },
+                              ]}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Icons.users}
+              title={search ? 'No students match your search' : 'No students yet'}
+              message={
+                search
+                  ? 'Try a different search or show inactive students.'
+                  : 'Add your first student or import from a CSV.'
+              }
+              action={
+                !search && (
+                  <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
+                    <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
+                  </button>
+                )
+              }
+            />
+          )}
+        </>
+      )}
+
+      {tab === 'stats' && (
+        <>
+          {extraStats ? (
+            <div className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="card p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total Sessions</p>
+                  <p className="mt-1 text-3xl font-black text-slate-900">{extraStats.totalSessions}</p>
+                </div>
+                <div className="card p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Perfect Attendance</p>
+                  <p className="mt-1 text-3xl font-black text-slate-900">{extraStats.perfectCount}</p>
+                  <p className="text-xs text-slate-500">{extraStats.totalStudents ? `${((extraStats.perfectCount / extraStats.totalStudents) * 100).toFixed(0)}% of students` : ''}</p>
+                </div>
+                <div className="card p-4">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Best Day</p>
+                  <p className="mt-1 text-3xl font-black text-slate-900">{extraStats.bestDay?.day || '—'}</p>
+                  <p className="text-xs text-slate-500">{extraStats.bestDay?.rate != null ? `${extraStats.bestDay.rate.toFixed(1)}% avg attendance` : ''}</p>
+                </div>
+              </div>
+
+              {extraStats.bestSession && extraStats.worstSession && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="card p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Best Session</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">{formatDate(new Date(extraStats.bestSession.session.date.split('-').join('/')))}</p>
+                    <p className="text-sm text-slate-600">{extraStats.bestSession.present} present · {extraStats.bestSession.absent} absent</p>
+                    <p className="mt-1 text-2xl font-black text-emerald-600">{extraStats.bestSession.rate.toFixed(1)}%</p>
+                  </div>
+                  <div className="card p-4">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Worst Session</p>
+                    <p className="mt-1 text-lg font-bold text-slate-900">{formatDate(new Date(extraStats.worstSession.session.date.split('-').join('/')))}</p>
+                    <p className="text-sm text-slate-600">{extraStats.worstSession.present} present · {extraStats.worstSession.absent} absent</p>
+                    <p className="mt-1 text-2xl font-black text-rose-600">{extraStats.worstSession.rate.toFixed(1)}%</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="card p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 mb-3">Attendance Distribution</p>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  {[
+                    { label: '100%', range: 'p === 100', count: classStats.percentages.filter((p) => p.percentage === 100 && p.totalSessions > 0).length, color: 'bg-emerald-500' },
+                    { label: '75-99%', range: 'p >= 75', count: classStats.percentages.filter((p) => p.percentage >= 75 && p.percentage < 100 && p.totalSessions > 0).length, color: 'bg-brand-500' },
+                    { label: '50-74%', range: 'p >= 50', count: classStats.percentages.filter((p) => p.percentage >= 50 && p.percentage < 75 && p.totalSessions > 0).length, color: 'bg-amber-500' },
+                    { label: 'Below 50%', range: 'p < 50', count: classStats.percentages.filter((p) => p.percentage < 50 && p.totalSessions > 0).length, color: 'bg-rose-500' },
+                  ].map((bucket) => {
+                    const total = classStats.percentages.filter((p) => p.totalSessions > 0).length || 1;
+                    const pct = (bucket.count / total) * 100;
+                    return (
+                      <div key={bucket.label} className="rounded-xl bg-slate-50 p-3">
+                        <p className="text-xs font-semibold text-slate-600">{bucket.label}</p>
+                        <p className="mt-1 text-2xl font-black text-slate-900">{bucket.count}</p>
+                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                          <div className={`h-full rounded-full ${bucket.color}`} style={{ width: `${pct}%` }} />
                         </div>
                       </div>
-                    </td>
-                    <td className="hidden px-4 py-3 text-xs text-slate-500 md:table-cell">{s.email}</td>
-                    <td className="px-4 py-3">
-                      <StatusPill status={s.status} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end">
-                        <Dropdown
-                          align="right"
-                          items={[
-                            { label: 'Edit', icon: Icons.pencil, onClick: () => { setEditingStudent(s); setFormOpen(true); } },
-                            { label: 'View Attendance', icon: Icons.history, onClick: () => navigate(`/classes/${id}/students/${s.id}`) },
-                            { divider: true },
-                            s.status === STUDENT_STATUS.ACTIVE
-                              ? { label: 'Remove', icon: Icons.trash, danger: true, onClick: () => setRemoving(s) }
-                              : { label: 'Restore', icon: Icons.check, onClick: () => restoreStudent(s) },
-                          ]}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <EmptyState
-          icon={Icons.users}
-          title={search ? 'No students match your search' : 'No students yet'}
-          message={
-            search
-              ? 'Try a different search or show inactive students.'
-              : 'Add your first student or import from a CSV.'
-          }
-          action={
-            !search && (
-              <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
-                <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
-              </button>
-            )
-          }
-        />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <EmptyState
+              icon={Icons.chart}
+              title="No stats yet"
+              message="Complete at least one attendance session to see statistics."
+            />
+          )}
+        </>
       )}
 
       <StudentForm

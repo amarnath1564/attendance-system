@@ -35,9 +35,6 @@ function ClassCard({ klass, navigate, onDelete }) {
   const lastSession = sessions && sessions.length ? sessions[sessions.length - 1] : null;
 
   const menu = [
-    { label: 'Manage Students', icon: Icons.users, onClick: () => navigate(`/classes/${klass.id}`) },
-    { label: 'Attendance History', icon: Icons.history, onClick: () => navigate(`/classes/${klass.id}/history`) },
-    { divider: true },
     { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
     { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
   ];
@@ -72,9 +69,14 @@ function ClassCard({ klass, navigate, onDelete }) {
         )}
       </div>
 
-      <button className="btn-primary mt-4 w-full" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
-        {inProgress ? 'Continue Attendance' : 'Take Attendance'}
-      </button>
+      <div className="mt-4 flex gap-2">
+        <button className="btn-secondary flex-1" onClick={() => navigate(`/classes/${klass.id}`)}>
+          <Icon d={Icons.users} className="h-4 w-4" /> Manage
+        </button>
+        <button className="btn-primary flex-1" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
+          {inProgress ? 'Continue' : 'Take Attendance'}
+        </button>
+      </div>
     </div>
   );
 }
