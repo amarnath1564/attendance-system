@@ -161,7 +161,7 @@ export async function getStudentsForClass(class_id, { includeInactive = true } =
 }
 
 // ---------------------------------------------------------------- Attendance sessions
-export async function createSession(class_id) {
+export async function createSession(class_id, name) {
   const existing = await db.attendance_sessions
     .where('[class_id+status]')
     .equals([class_id, SESSION_STATUS.IN_PROGRESS])
@@ -169,10 +169,18 @@ export async function createSession(class_id) {
   if (existing) return existing;
 
   const date = todayKey();
+  
+  let sessionName = name;
+  if (!sessionName) {
+    const allSessions = await db.attendance_sessions.where('class_id').equals(class_id).toArray();
+    sessionName = `Session ${allSessions.length + 1}`;
+  }
+
   const session = {
     id: uid('ses'),
     class_id,
     date,
+    name: sessionName,
     status: SESSION_STATUS.IN_PROGRESS,
     created_at: nowIso(),
     submitted_at: null,
