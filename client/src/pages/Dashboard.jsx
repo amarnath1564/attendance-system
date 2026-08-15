@@ -48,8 +48,8 @@ function ClassCard({ klass, navigate, onDelete }) {
   };
 
   const menu = [
-    { label: 'Export Class', icon: Icons.download, onClick: handleExport },
     { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
+    { label: 'Export JSON', icon: Icons.download, onClick: handleExport },
     { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
   ];
 
@@ -119,8 +119,8 @@ function ClassListItem({ klass, navigate, onDelete }) {
   };
 
   const menu = [
-    { label: 'Export Class', icon: Icons.download, onClick: handleExport },
     { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
+    { label: 'Export JSON', icon: Icons.download, onClick: handleExport },
     { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
   ];
 
