@@ -107,7 +107,7 @@ export default function AttendanceHistory() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <div className="mb-4">
-        <BackLink to={`/classes/${id}`} label="Back to class" />
+        <BackLink to="/attendance-history" label="Back to Attendance History" />
       </div>
       <PageHeader title="Attendance History" subtitle={klass.class_name} />
 
