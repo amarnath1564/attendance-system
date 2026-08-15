@@ -14,11 +14,11 @@ export default function Layout() {
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
             <Link to="/" className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-brand-glow">
                 <Icon d={Icons.clipboard} className="h-5 w-5" />
               </span>
               <span className="text-lg font-bold tracking-tight text-slate-900">
-                Attend<span className="text-brand-600">It</span>
+                Attend<span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">It</span>
               </span>
             </Link>
             <div className="flex items-center gap-2">
