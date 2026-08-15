@@ -70,26 +70,19 @@ export default function AttendanceSession() {
   const [replaceWarn, setReplaceWarn] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
   const [actions, setActions] = useState([]);
-  const [sessionName, setSessionName] = useState('');
-  const [showNameModal, setShowNameModal] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
   const onKeyRef = useRef(() => {});
 
   useEffect(() => {
     if (session || creating.current) return;
-    setShowNameModal(true);
-  }, [session]);
-
-  const startSession = async () => {
-    setShowNameModal(false);
     creating.current = true;
-    createSession(id, sessionName.trim() || undefined)
+    createSession(id)
       .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
       .finally(() => {
         creating.current = false;
       });
-  };
+  }, [session, id, pushToast]);
 
   useEffect(() => {
     if (!students || !records || initialized) return;
@@ -519,34 +512,6 @@ export default function AttendanceSession() {
           </button>
           <button className="btn-primary" onClick={startNew}>
             Start New Session
-          </button>
-        </div>
-      </Modal>
-
-      <Modal open={showNameModal} onClose={() => { setShowNameModal(false); navigate('/'); }} title="Name this session" size="sm">
-        <p className="text-sm leading-6 text-slate-600">
-          Enter a name for this attendance session. Leave blank for default naming.
-        </p>
-        <div className="mt-4">
-          <label className="label" htmlFor="session-name">
-            Session Name
-          </label>
-          <input
-            id="session-name"
-            className="input"
-            placeholder="e.g. Lecture 1, Quiz Day, etc."
-            value={sessionName}
-            onChange={(e) => setSessionName(e.target.value)}
-            autoFocus
-          />
-          <p className="mt-1 text-xs text-slate-500">Leave blank for auto-naming (Session 1, Session 2, etc.)</p>
-        </div>
-        <div className="mt-6 flex justify-end gap-2">
-          <button className="btn-secondary" onClick={() => { setShowNameModal(false); navigate('/'); }}>
-            Cancel
-          </button>
-          <button className="btn-primary" onClick={startSession}>
-            Start Session
           </button>
         </div>
       </Modal>
