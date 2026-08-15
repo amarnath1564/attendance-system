@@ -30,7 +30,7 @@ export default function SessionDetail() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <BackLink to={`/classes/${id}/history`} label="Attendance History" />
+      <BackLink to="/history" label="Attendance History" />
 
       <div className="mt-4 flex items-start justify-between">
         <div>
