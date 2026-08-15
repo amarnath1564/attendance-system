@@ -10,6 +10,7 @@ import {
   getRecordMap,
   deleteRecordByStudent,
   hasCompletedSessionOnDate,
+  getSessionsOnDate,
 } from '../db/repositories.js';
 import { toDateKey, formatDateLabel } from '../lib/utils.js';
 import { useApp } from '../state/AppContext.jsx';
@@ -64,25 +65,44 @@ export default function AttendanceSession() {
   const session = useLiveQuery(() => getInProgressSession(id), [id]);
   const records = useLiveQuery(async () => (session ? getRecordMap(session.id) : {}), [session?.id]);
   const duplicateToday = useLiveQuery(async () => hasCompletedSessionOnDate(id, toDateKey(new Date())), [id]);
+  const todaySessions = useLiveQuery(async () => getSessionsOnDate(id, toDateKey(new Date())), [id]);
 
   const [index, setIndex] = useState(0);
   const [initialized, setInitialized] = useState(false);
   const [replaceWarn, setReplaceWarn] = useState(false);
   const [presentationMode, setPresentationMode] = useState(false);
   const [actions, setActions] = useState([]);
+  const [sessionName, setSessionName] = useState('');
+  const [namePageReady, setNamePageReady] = useState(false);
   const lastMark = useRef(0);
   const creating = useRef(false);
   const onKeyRef = useRef(() => {});
 
   useEffect(() => {
-    if (session || creating.current) return;
+    if (session || creating.current || namePageReady) return;
+    if (todaySessions === undefined) return;
+    if (todaySessions.length > 0) {
+      setSessionName(`Session ${todaySessions.length + 1}`);
+      setNamePageReady(true);
+    } else {
+      creating.current = true;
+      createSession(id)
+        .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
+        .finally(() => {
+          creating.current = false;
+        });
+    }
+  }, [session, todaySessions, namePageReady, id, pushToast]);
+
+  const startWithName = () => {
+    setNamePageReady(false);
     creating.current = true;
-    createSession(id)
+    createSession(id, sessionName.trim() || undefined)
       .catch((err) => pushToast({ type: 'error', title: 'Could not start session', message: err.message }))
       .finally(() => {
         creating.current = false;
       });
-  }, [session, id, pushToast]);
+  };
 
   useEffect(() => {
     if (!students || !records || initialized) return;
@@ -231,6 +251,52 @@ export default function AttendanceSession() {
     document.addEventListener('keydown', listener);
     return () => document.removeEventListener('keydown', listener);
   }, []);
+
+  if (namePageReady && !session) {
+    return (
+      <div className="flex min-h-[calc(100vh-4rem)] flex-col bg-slate-100">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 py-6">
+          <div className="card w-full p-8">
+            <div className="text-center">
+              <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-brand-100">
+                <Icon d={Icons.clipboard} className="h-6 w-6 text-brand-600" />
+              </span>
+              <h1 className="text-xl font-bold text-slate-900">Name This Session</h1>
+              <p className="mt-2 text-sm text-slate-500">
+                Enter a name for this attendance session or continue with the default.
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="label" htmlFor="session-name">
+                Session Name
+              </label>
+              <input
+                id="session-name"
+                className="input"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter') startWithName(); }}
+              />
+              <p className="mt-1 text-xs text-slate-400">
+                Default: {sessionName}
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+              <button className="btn-primary w-full py-3" onClick={startWithName}>
+                Start Session
+              </button>
+              <button className="btn-ghost w-full" onClick={() => navigate('/')}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!students || !session || !records) return null;
 
