@@ -497,7 +497,7 @@ export default function ClassDetail() {
                   <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-4 py-3">Roll Number</th>
-                      <th className="px-4 py-3">PRN Number</th>
+                      <th className="px-4 py-3">PRN No.</th>
                       <th className="px-4 py-3">Application Number</th>
                       <th className="px-4 py-3">Student Name</th>
                       <th className="hidden px-4 py-3 md:table-cell">Email</th>

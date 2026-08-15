@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useState, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { getTeacher } from '../db/repositories.js';
 
@@ -13,28 +13,8 @@ export function useApp() {
 export function AppProvider({ children }) {
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [toasts, setToasts] = useState([]);
-  const [theme, setTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('attendit-theme') || 'light';
-    }
-    return 'light';
-  });
 
   const teacher = useLiveQuery(() => getTeacher(), []);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-    localStorage.setItem('attendit-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
 
   const pushToast = useCallback(({ type = 'success', title, message }) => {
     const id = `t_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -50,8 +30,6 @@ export function AppProvider({ children }) {
     setOnline,
     pushToast,
     toasts,
-    theme,
-    toggleTheme,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
