@@ -76,6 +76,11 @@ export default function ClassSetup() {
   const goImport = async (students) => {
     setBusy(true);
     setError('');
+    if (!name.trim()) {
+      setError('Please enter a class name.');
+      setBusy(false);
+      return;
+    }
     try {
       let classId = id;
       if (!classId) {
@@ -102,6 +107,10 @@ export default function ClassSetup() {
   const onCsv = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!name.trim()) {
+      setError('Please enter a class name before uploading a CSV.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       const rows = parseCsv(String(reader.result || ''));
