@@ -45,6 +45,8 @@ function SessionRow({ session, className, counts }) {
 export default function GlobalAttendanceHistory() {
   const navigate = useNavigate();
   const classes = useLiveQuery(() => db.classes.toArray(), []);
+  const [selectedClassId, setSelectedClassId] = useState('all');
+  
   const allSessions = useLiveQuery(async () => {
     if (!classes || classes.length === 0) return [];
     const classIds = classes.map((c) => c.id);
@@ -86,20 +88,22 @@ export default function GlobalAttendanceHistory() {
   const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const rows = useMemo(() => {
-    return (allSessions || []).map((s) => {
-      const recs = allRecords?.[s.id] || [];
-      const total = classRosterCounts?.[s.class_id] ?? recs.length;
-      return {
-        session: s,
-        className: classMap[s.class_id] || 'Unknown Class',
-        counts: {
-          total,
-          present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
-          absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
-        },
-      };
-    });
-  }, [allSessions, allRecords, classMap, classRosterCounts]);
+    return (allSessions || [])
+      .filter((s) => selectedClassId === 'all' || s.class_id === selectedClassId)
+      .map((s) => {
+        const recs = allRecords?.[s.id] || [];
+        const total = classRosterCounts?.[s.class_id] ?? recs.length;
+        return {
+          session: s,
+          className: classMap[s.class_id] || 'Unknown Class',
+          counts: {
+            total,
+            present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
+            absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
+          },
+        };
+      });
+  }, [allSessions, allRecords, classMap, classRosterCounts, selectedClassId]);
 
   const sessionByDate = useMemo(() => {
     const map = {};
@@ -118,6 +122,25 @@ export default function GlobalAttendanceHistory() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader title="Attendance History" subtitle="All classes" />
+
+      <div className="mb-6">
+        <label className="label" htmlFor="class-filter">
+          Filter by Class
+        </label>
+        <select
+          id="class-filter"
+          className="input max-w-xs"
+          value={selectedClassId}
+          onChange={(e) => setSelectedClassId(e.target.value)}
+        >
+          <option value="all">All Classes</option>
+          {(classes || []).map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.class_name}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {rows.length > 0 ? (
         <div className="flex flex-col gap-6 lg:flex-row">
