@@ -34,7 +34,7 @@ export default function SessionDetail() {
 
       <div className="mt-4 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{formatDate(date)}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{session.name || formatDate(date)}</h1>
           <p className="mt-1 text-sm text-slate-500">
             {klass.class_name}
             {klass.section ? ` · Section ${klass.section}` : ''}

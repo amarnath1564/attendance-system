@@ -161,7 +161,14 @@ export async function getStudentsForClass(class_id, { includeInactive = true } =
 }
 
 // ---------------------------------------------------------------- Attendance sessions
-export async function createSession(class_id) {
+export async function getSessionsOnDate(class_id, date) {
+  return db.attendance_sessions
+    .where('[class_id+date]')
+    .equals([class_id, date])
+    .toArray();
+}
+
+export async function createSession(class_id, name) {
   const existing = await db.attendance_sessions
     .where('[class_id+status]')
     .equals([class_id, SESSION_STATUS.IN_PROGRESS])
@@ -173,6 +180,7 @@ export async function createSession(class_id) {
     id: uid('ses'),
     class_id,
     date,
+    name: name || '',
     status: SESSION_STATUS.IN_PROGRESS,
     created_at: nowIso(),
     submitted_at: null,
