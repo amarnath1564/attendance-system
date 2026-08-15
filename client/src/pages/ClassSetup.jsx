@@ -178,7 +178,7 @@ export default function ClassSetup() {
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Year</label>
               <div className="flex gap-2">
@@ -209,6 +209,9 @@ export default function ClassSetup() {
                 ))}
               </div>
             </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="label" htmlFor="cls-section">
                 Section
