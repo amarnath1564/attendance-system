@@ -8,6 +8,7 @@ export function matchHeader(header) {
   const h = normalize(header);
   if (/application|admission|app ?no|app ?id|adm ?no/.test(h)) return 'application_number';
   if (/^roll$|roll ?no|roll ?number/.test(h)) return 'roll_number';
+  if (/prn|permanent ?register|register ?no/.test(h)) return 'prn_number';
   if (/full ?name|student ?name|name$|student/.test(h)) return 'name';
   if (/email|mail/.test(h)) return 'email';
   if (/status|active|inactive/.test(h)) return 'status';
@@ -87,6 +88,7 @@ export function parseStudentRows(rows, manualColumns = null) {
 
     const app = (row[columns.application_number] ?? '').toString().trim();
     const roll = (row[columns.roll_number] ?? '').toString().trim();
+    const prn = columns.prn_number != null ? (row[columns.prn_number] ?? '').toString().trim() : '';
     const name = (row[columns.name] ?? '').toString().trim();
     const email = columns.email != null ? (row[columns.email] ?? '').toString().trim() : '';
     const statusRaw = columns.status != null ? (row[columns.status] ?? '').toString().trim() : '';
@@ -107,7 +109,7 @@ export function parseStudentRows(rows, manualColumns = null) {
     }
 
     const status = /inactive/i.test(statusRaw) ? 'inactive' : 'active';
-    const student = { application_number: app, roll_number: roll, name, email, status, duplicate: false };
+    const student = { application_number: app, roll_number: roll, prn_number: prn, name, email, status, duplicate: false };
     valid.push(student);
     if (app) seenApp.set(app, student);
     if (roll) seenRoll.set(roll, student);

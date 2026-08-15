@@ -292,7 +292,7 @@ export default function ClassSetup() {
             <input ref={importFileRef} type="file" accept=".json,application/json" className="hidden" onChange={onImportClass} />
               </div>
               <p className="text-xs leading-5 text-slate-500">
-                The CSV should have columns: Application Number, Roll Number, Student Name. Email and Status are optional.
+                The CSV should have columns: Application Number, Roll Number, Student Name. PRN Number, Email and Status are optional.
               </p>
               <p className="text-xs leading-5 text-slate-500">
                 Import Existing Class: Upload a previously exported class JSON file to restore class details and students.
