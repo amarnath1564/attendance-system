@@ -95,6 +95,69 @@ function ClassCard({ klass, navigate, onDelete }) {
   );
 }
 
+function ClassListItem({ klass, navigate, onDelete }) {
+  const { pushToast } = useApp();
+  const students = useLiveQuery(() => getStudentsForClass(klass.id, { includeInactive: true }), [klass.id]);
+  const activeCount = useMemo(
+    () => (students || []).filter((s) => s.status === STUDENT_STATUS.ACTIVE).length,
+    [students]
+  );
+  const sessions = useLiveQuery(() => getSessionsForClass(klass.id), [klass.id]);
+  const inProgress = useLiveQuery(() => getInProgressSession(klass.id), [klass.id]);
+
+  const lastSession = sessions && sessions.length ? sessions[sessions.length - 1] : null;
+
+  const handleExport = async () => {
+    try {
+      const data = await exportClass(klass.id);
+      const filename = `${(klass.class_name || 'class').replace(/\s+/g, '-').toLowerCase()}-export.json`;
+      downloadClassExport(data, filename);
+      pushToast({ type: 'success', title: 'Class exported', message: 'Downloaded class export file.' });
+    } catch (err) {
+      pushToast({ type: 'error', title: 'Export failed', message: err.message });
+    }
+  };
+
+  const menu = [
+    { label: 'Export Class', icon: Icons.download, onClick: handleExport },
+    { label: 'Edit Class', icon: Icons.pencil, onClick: () => navigate(`/classes/${klass.id}/edit`) },
+    { label: 'Delete Class', icon: Icons.trash, danger: true, onClick: () => onDelete(klass) },
+  ];
+
+  return (
+    <div className="card fade-in flex items-center gap-4 p-4 transition hover:shadow-lift">
+      <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 flex-1 text-left">
+        <div className="flex items-center gap-3">
+          <h3 className="truncate text-base font-bold text-slate-900">
+            {klass.class_name}
+          </h3>
+          <span className="text-xs font-medium text-slate-500">
+            {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Sem ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Sec ${klass.section}` : ''}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center gap-4 text-sm text-slate-500">
+          <span className="flex items-center gap-1">
+            <Icon d={Icons.users} className="h-3.5 w-3.5 text-slate-400" />
+            {activeCount} student{activeCount === 1 ? '' : 's'}
+          </span>
+          <span>
+            {lastSession ? `Last: ${formatDate(new Date(lastSession.date))}` : 'No attendance yet'}
+          </span>
+        </div>
+      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <button className="btn-secondary px-3 py-2 text-sm" onClick={() => navigate(`/classes/${klass.id}`)}>
+          Manage
+        </button>
+        <button className="btn-primary px-3 py-2 text-sm" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
+          {inProgress ? 'Continue' : 'Take Attendance'}
+        </button>
+        <Dropdown items={menu} />
+      </div>
+    </div>
+  );
+}
+
 function UnfinishedCard({ klass, session, records, total }) {
   const { pushToast } = useApp();
   const navigate = useNavigate();
@@ -134,6 +197,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const classes = useLiveQuery(() => db.classes.orderBy('created_at').reverse().toArray(), []);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [viewMode, setViewMode] = useState('grid');
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
@@ -178,27 +242,71 @@ export default function Dashboard() {
 
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900">My Classes</h2>
-        <span className="text-sm text-slate-500">
-          {classes?.length || 0} class{(classes || []).length === 1 ? '' : 'es'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-500">
+            {classes?.length || 0} class{(classes || []).length === 1 ? '' : 'es'}
+          </span>
+          <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`rounded-md px-2 py-1 text-sm transition ${
+                viewMode === 'grid'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Icon d={Icons.grid} className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`rounded-md px-2 py-1 text-sm transition ${
+                viewMode === 'list'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Icon d={Icons.list} className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       {classes && classes.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {classes.map((klass) => (
-            <ClassCard key={klass.id} klass={klass} navigate={navigate} onDelete={setConfirmDelete} />
-          ))}
-          <Link
-            to="/classes/new"
-            className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white/40 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/40"
-          >
-            <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600">
-              <Icon d={Icons.plus} className="h-6 w-6" />
-            </span>
-            <span className="text-sm font-bold text-brand-700">Add Class</span>
-            <span className="mt-1 text-xs text-slate-500">Create a class and import your students</span>
-          </Link>
-        </div>
+        viewMode === 'grid' ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {classes.map((klass) => (
+              <ClassCard key={klass.id} klass={klass} navigate={navigate} onDelete={setConfirmDelete} />
+            ))}
+            <Link
+              to="/classes/new"
+              className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white/40 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/40"
+            >
+              <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+                <Icon d={Icons.plus} className="h-6 w-6" />
+              </span>
+              <span className="text-sm font-bold text-brand-700">Add Class</span>
+              <span className="mt-1 text-xs text-slate-500">Create a class and import your students</span>
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {classes.map((klass) => (
+              <ClassListItem key={klass.id} klass={klass} navigate={navigate} onDelete={setConfirmDelete} />
+            ))}
+            <Link
+              to="/classes/new"
+              className="flex items-center gap-4 rounded-xl border-2 border-dashed border-slate-300 bg-white/40 p-4 text-left transition hover:border-brand-400 hover:bg-brand-50/40"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                <Icon d={Icons.plus} className="h-5 w-5" />
+              </span>
+              <div>
+                <span className="text-sm font-bold text-brand-700">Add Class</span>
+                <span className="block text-xs text-slate-500">Create a class and import your students</span>
+              </div>
+            </Link>
+          </div>
+        )
       ) : (
         <EmptyState
           icon={Icons.users}
