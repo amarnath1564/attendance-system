@@ -81,7 +81,9 @@ export default function GlobalAttendanceHistory() {
   }, [classes]);
 
   const [month, setMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
+  const today = new Date();
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [selectedDate, setSelectedDate] = useState(todayKey);
 
   const rows = useMemo(() => {
     return (allSessions || []).map((s) => {
@@ -157,7 +159,6 @@ export default function GlobalAttendanceHistory() {
                 return (
                   <button
                     key={`${dayKey}-cell`}
-                    disabled={!hasSessions}
                     onClick={() => setSelectedDate(isSelected ? null : dayKey)}
                     className={[
                       'relative flex min-h-[64px] flex-col rounded-lg border p-1 text-left transition',

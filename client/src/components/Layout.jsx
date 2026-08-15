@@ -50,20 +50,14 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1 pb-16">
+        <main className="flex-1">
           <Outlet />
         </main>
 
-        <footer className="border-t border-slate-200 bg-white py-4">
-          <div className="mx-auto flex max-w-6xl flex-col items-center gap-1 px-4 text-center text-xs text-slate-500">
-            <p className="flex items-center gap-1.5 font-medium text-slate-600">
-              <Icon d={Icons.lock} className="h-3.5 w-3.5" />
-              Your application data is stored locally on this device.
-            </p>
-            <p>
-              {teacher ? `Signed in locally as ${teacher.name} · ` : ''}
-              Everything stays on this device — no account or cloud required.
-            </p>
+        <footer className="border-t border-slate-200 bg-white py-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-center gap-1 px-4 text-center text-xs text-slate-500">
+            <Icon d={Icons.lock} className="h-3.5 w-3.5" />
+            Your application data is stored locally on this device. Signed in locally as {teacher?.name || 'demo'}.
           </div>
         </footer>
       </div>
