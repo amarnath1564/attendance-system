@@ -265,6 +265,9 @@ export default function AttendanceSession() {
               <p className="mt-2 text-sm text-slate-500">
                 Enter a name for this attendance session or continue with the default.
               </p>
+              <p className="mt-1 text-xs text-slate-400">
+                This helps keep track of sessions if more than one is created per day.
+              </p>
             </div>
 
             <div className="mt-6">
