@@ -408,35 +408,50 @@ export default function ClassDetail() {
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">Student Risk</p>
               <span className="text-xs text-slate-500">Threshold: {threshold}%</span>
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {(allStudents || []).filter((student) => student.status === STUDENT_STATUS.ACTIVE).map((student) => {
+            {(() => {
+              const atRiskStudents = (allStudents || []).filter((student) => {
+                if (student.status !== STUDENT_STATUS.ACTIVE) return false;
                 const item = classStats.percentages.find((entry) => entry.student.id === student.id);
                 const pct = item?.percentage ?? 0;
                 const noData = item?.totalSessions === 0;
+                if (noData) return false;
                 const risk = getRiskLevel(pct, threshold);
-                const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
+                return risk.label !== 'SAFE';
+              });
+              if (atRiskStudents.length === 0) {
                 return (
-                  <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-slate-900">{student.name}</p>
-                      <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
-                    </div>
-                    <div className="text-right">
-                      {noData ? (
-                        <p className="text-xs font-semibold text-slate-400">No attendance data</p>
-                      ) : (
-                        <>
+                  <div className="flex flex-col items-center justify-center rounded-xl bg-emerald-50 p-6 text-center">
+                    <Icon d={Icons.checkCircle} className="h-8 w-8 text-emerald-500" />
+                    <p className="mt-2 font-semibold text-emerald-700">All students are above the threshold</p>
+                    <p className="text-sm text-emerald-600">No students at risk.</p>
+                  </div>
+                );
+              }
+              return (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {atRiskStudents.map((student) => {
+                    const item = classStats.percentages.find((entry) => entry.student.id === student.id);
+                    const pct = item?.percentage ?? 0;
+                    const risk = getRiskLevel(pct, threshold);
+                    const tone = risk.tone === 'emerald' ? 'bg-emerald-50 text-emerald-700' : risk.tone === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700';
+                    return (
+                      <div key={student.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{student.name}</p>
+                          <p className="text-xs text-slate-500">{student.application_number} · {student.roll_number || '—'}</p>
+                        </div>
+                        <div className="text-right">
                           <p className="font-black text-slate-900">{pct.toFixed(0)}%</p>
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${tone}`}>
                             {risk.icon} {risk.label}
                           </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </>
       )}
