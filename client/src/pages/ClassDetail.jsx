@@ -306,11 +306,6 @@ export default function ClassDetail() {
               <p className="mt-1 text-2xl font-black text-slate-900">{classStats.hasData ? classStats.belowThreshold : '—'}</p>
             </div>
           </div>
-          <div className="mt-4 flex justify-end">
-            <button className="btn-primary" onClick={() => navigate(`/classes/${id}/attendance`)}>
-              <Icon d={Icons.clipboard} className="h-4 w-4" /> Take Attendance
-            </button>
-          </div>
         </div>
 
         <div className="card p-4">

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { RECORD_STATUS } from '../db/db.js';
 import { getSessionsForClass } from '../db/repositories.js';
@@ -194,11 +194,6 @@ export default function AttendanceHistory() {
           icon={Icons.history}
           title="No attendance recorded yet"
           message="Attendance you submit will appear here, stored locally on this device."
-          action={
-            <Link to={`/classes/${id}/attendance`} className="btn-primary">
-              <Icon d={Icons.clipboard} className="h-4 w-4" /> Take Attendance
-            </Link>
-          }
         />
       )}
     </div>
