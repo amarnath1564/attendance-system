@@ -1,10 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTeacher } from '../db/repositories.js';
 import { useApp } from '../state/AppContext.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
-import WelcomeModal from '../components/WelcomeModal.jsx';
-import FeatureTour from '../components/FeatureTour.jsx';
 import db from '../db/db.js';
 
 export default function Onboarding() {
@@ -14,9 +12,6 @@ export default function Onboarding() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [profileCreated, setProfileCreated] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showTour, setShowTour] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -30,8 +25,7 @@ export default function Onboarding() {
       await createTeacher({ name, email });
       await db.settings.put({ key: 'tour_completed', value: false });
       pushToast({ type: 'success', title: 'Profile created', message: `Welcome, ${name.trim()}!` });
-      setProfileCreated(true);
-      setShowWelcome(true);
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -39,27 +33,10 @@ export default function Onboarding() {
     }
   };
 
-  const handleSkipTour = async () => {
-    await db.settings.put({ key: 'tour_completed', value: true });
-    navigate('/');
-  };
-
-  const handleStartTour = () => {
-    setShowWelcome(false);
-    setShowTour(true);
-  };
-
-  const handleTourComplete = async () => {
-    await db.settings.put({ key: 'tour_completed', value: true });
-    setShowTour(false);
-    navigate('/');
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-brand-50 via-white to-white px-4 py-12">
       <div className="fade-in w-full max-w-5xl">
         <div className="grid gap-8 sm:grid-cols-2">
-          {/* Left side - Welcome message and icon */}
           <div className="flex flex-col justify-center">
             <span className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lift">
               <Icon d={Icons.clipboard} className="h-8 w-8" />
@@ -76,7 +53,6 @@ export default function Onboarding() {
             </div>
           </div>
 
-          {/* Right side - Form with input fields */}
           <div>
             <form onSubmit={submit} className="card p-6 sm:p-8">
               <h2 className="mb-6 text-xl font-bold text-slate-900">Create Your Profile</h2>
@@ -114,16 +90,6 @@ export default function Onboarding() {
           </div>
         </div>
       </div>
-
-      <WelcomeModal
-        open={showWelcome}
-        onClose={handleSkipTour}
-        onStartTour={handleStartTour}
-      />
-      <FeatureTour
-        open={showTour}
-        onComplete={handleTourComplete}
-      />
     </div>
   );
 }

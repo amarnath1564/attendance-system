@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { STUDENT_STATUS } from '../db/db.js';
@@ -16,6 +16,8 @@ import Dropdown from '../components/Dropdown.jsx';
 import { EmptyState } from '../components/ui.jsx';
 import { Confirm } from '../components/Modal.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
+import WelcomeModal from '../components/WelcomeModal.jsx';
+import FeatureTour from '../components/FeatureTour.jsx';
 
 function greeting() {
   const h = new Date().getHours();
@@ -197,6 +199,32 @@ export default function Dashboard() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
 
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+
+  const tourCompleted = useLiveQuery(() => db.settings.get('tour_completed'));
+
+  useEffect(() => {
+    if (tourCompleted !== undefined && tourCompleted?.value === false) {
+      setShowWelcome(true);
+    }
+  }, [tourCompleted]);
+
+  const handleSkipTour = async () => {
+    await db.settings.put({ key: 'tour_completed', value: true });
+    setShowWelcome(false);
+  };
+
+  const handleStartTour = () => {
+    setShowWelcome(false);
+    setShowTour(true);
+  };
+
+  const handleTourComplete = async () => {
+    await db.settings.put({ key: 'tour_completed', value: true });
+    setShowTour(false);
+  };
+
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   const unfinished = useLiveQuery(async () => {
@@ -294,6 +322,7 @@ export default function Dashboard() {
             ))}
             <Link
               to="/classes/new"
+              data-tour="tour-add-class"
               className="flex items-center gap-4 rounded-xl border-2 border-dashed border-slate-300 bg-white/40 p-4 text-left transition hover:border-brand-400 hover:bg-brand-50/40"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
@@ -312,7 +341,7 @@ export default function Dashboard() {
           title="No classes yet"
           message="Create your first class, then take attendance — completely offline."
           action={
-            <Link to="/classes/new" className="btn-primary">
+            <Link to="/classes/new" data-tour="tour-add-class" className="btn-primary">
               <Icon d={Icons.plus} className="h-4 w-4" /> Add Class
             </Link>
           }
@@ -331,6 +360,16 @@ export default function Dashboard() {
         message={`This permanently removes "${confirmDelete?.class_name}" including students and attendance history. Consider exporting a backup first.`}
         confirmLabel="Delete Class"
         danger
+      />
+
+      <WelcomeModal
+        open={showWelcome}
+        onClose={handleSkipTour}
+        onStartTour={handleStartTour}
+      />
+      <FeatureTour
+        open={showTour}
+        onComplete={handleTourComplete}
       />
     </div>
   );
