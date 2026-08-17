@@ -183,7 +183,7 @@ export default function ClassSetup() {
         subtitle={
           editing
             ? 'Update class details or re-import students from a CSV file.'
-            : 'Create a class and import your roster from a CSV file, or start with samples.'
+            : 'Create a class and import your roster from a CSV file, or start with without importing.'
         }
       />
 
