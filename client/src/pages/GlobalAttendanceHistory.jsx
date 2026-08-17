@@ -194,8 +194,6 @@ export default function GlobalAttendanceHistory() {
                 const isSelected = selectedDate === dayKey;
                 const sessions = sessionByDate[dayKey] || [];
                 const totalCount = sessions.reduce((sum, s) => sum + s.counts.total, 0);
-                const totalPresent = sessions.reduce((sum, s) => sum + s.counts.present, 0);
-                const totalAbsent = sessions.reduce((sum, s) => sum + s.counts.absent, 0);
                 return (
                   <button
                     key={`${dayKey}-cell`}
@@ -211,11 +209,7 @@ export default function GlobalAttendanceHistory() {
                     <span className="text-xs font-bold">{date.getDate()}</span>
                     {hasSessions ? (
                       <div className="mt-auto">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-emerald-700">
-                          <span>{totalPresent}</span>
-                          <span>✓</span>
-                        </div>
-                        <div className="text-[10px] text-slate-500">{totalAbsent} absent</div>
+                        <div className="text-[10px] font-bold text-emerald-700">✓</div>
                       </div>
                     ) : null}
                   </button>
