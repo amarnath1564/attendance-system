@@ -360,7 +360,7 @@ export default function ClassDetail() {
               <Icon d={Icons.download} className="h-4 w-4" /> Export Roster
             </button>
             <button className="btn-secondary" onClick={exportAttendanceCsv}>
-              <Icon d={Icons.download} className="h-4 w-4" /> Export CSV
+              <Icon d={Icons.download} className="h-4 w-4" /> Export Attendance CSV
             </button>
           </>
         )}
