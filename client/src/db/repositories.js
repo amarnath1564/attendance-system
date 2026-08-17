@@ -120,6 +120,11 @@ export async function setStudentStatus(id, status) {
   return updateStudent(id, { status });
 }
 
+export async function deleteStudent(id) {
+  await db.attendance_records.where('student_id').equals(id).delete();
+  await db.students.delete(id);
+}
+
 export async function bulkImportStudents(class_id, students) {
   const existing = await db.students.where('class_id').equals(class_id).toArray();
   const byApp = new Map(existing.map((s) => [s.application_number, s]));

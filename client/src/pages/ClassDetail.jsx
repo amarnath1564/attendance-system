@@ -7,6 +7,7 @@ import {
   addStudent,
   updateStudent,
   setStudentStatus,
+  deleteStudent,
   getSessionsForClass,
 } from '../db/repositories.js';
 import { useApp } from '../state/AppContext.jsx';
@@ -310,6 +311,15 @@ export default function ClassDetail() {
     });
   };
 
+  const permanentlyDeleteStudent = async (student) => {
+    await deleteStudent(student.id);
+    pushToast({
+      type: 'info',
+      title: 'Student deleted',
+      message: 'Student and their attendance records have been permanently removed.',
+    });
+  };
+
   const tabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'students', label: 'Student Details' },
@@ -514,7 +524,16 @@ export default function ClassDetail() {
                             </span>
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-slate-900">{s.name}</p>
-                              <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
+                              <div className="flex items-center gap-1.5">
+                                <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
+                                <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                                  s.status === STUDENT_STATUS.ACTIVE
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}>
+                                  {s.status === STUDENT_STATUS.ACTIVE ? 'Active' : 'Inactive'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -528,8 +547,10 @@ export default function ClassDetail() {
                                 { label: 'View Attendance', icon: Icons.history, onClick: () => navigate(`/classes/${id}/students/${s.id}`) },
                                 { divider: true },
                                 s.status === STUDENT_STATUS.ACTIVE
-                                  ? { label: 'Remove', icon: Icons.trash, danger: true, onClick: () => setRemoving(s) }
-                                  : { label: 'Restore', icon: Icons.check, onClick: () => restoreStudent(s) },
+                                  ? { label: 'Mark Inactive', icon: Icons.x, onClick: () => removeStudent(s) }
+                                  : { label: 'Mark Active', icon: Icons.check, onClick: () => restoreStudent(s) },
+                                { divider: true },
+                                { label: 'Remove', icon: Icons.trash, danger: true, onClick: () => setRemoving(s) },
                               ]}
                             />
                           </div>
@@ -644,10 +665,10 @@ export default function ClassDetail() {
       <Confirm
         open={!!removing}
         onClose={() => setRemoving(null)}
-        onConfirm={() => removeStudent(removing)}
-        title="Remove student?"
-        message={`"${removing?.name}" will no longer appear during future attendance sessions. Previous attendance records will be preserved.`}
-        confirmLabel="Remove"
+        onConfirm={() => permanentlyDeleteStudent(removing)}
+        title="Delete student?"
+        message={`"${removing?.name}" and all their attendance records will be permanently deleted. This cannot be undone.`}
+        confirmLabel="Delete"
         danger
       />
     </div>
