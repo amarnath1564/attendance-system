@@ -336,12 +336,6 @@ export default function ClassDetail() {
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <button className="btn-primary" onClick={() => navigate(`/classes/${id}/attendance`)}>
-          <Icon d={Icons.clipboard} className="h-4 w-4" /> Take Attendance
-        </button>
-        <button className="btn-secondary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
-          <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
-        </button>
         {tab === 'students' && (
           <>
             <span className="flex-1" />
@@ -353,6 +347,10 @@ export default function ClassDetail() {
             </button>
           </>
         )}
+        <span className="flex-1" />
+        <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
+          <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
+        </button>
       </div>
 
       <div className="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
