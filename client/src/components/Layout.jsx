@@ -13,15 +13,17 @@ export default function Layout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4">
-            <Link to="/" className="flex items-center gap-2.5" data-tour="tour-logo">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
-                <Icon d={Icons.clipboard} className="h-5 w-5" />
-              </span>
-              <span className="text-lg font-bold tracking-tight text-slate-900">
-                Attend<span className="text-brand-600">It</span>
-              </span>
-            </Link>
-            <div className="flex items-center gap-2">
+            <div className="lg:hidden">
+              <Link to="/" className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+                  <Icon d={Icons.clipboard} className="h-5 w-5" />
+                </span>
+                <span className="text-lg font-bold tracking-tight text-slate-900">
+                  Attend<span className="text-brand-600">It</span>
+                </span>
+              </Link>
+            </div>
+            <div className="flex flex-1 items-center justify-end gap-2">
               <span
                 className={`hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold sm:inline-flex ${
                   online

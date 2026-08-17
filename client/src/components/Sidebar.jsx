@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { Icons, Icon } from './icons.jsx';
 
 export default function Sidebar() {
@@ -9,6 +9,16 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden w-56 shrink-0 border-r border-slate-200 bg-white lg:block">
+      <div className="sticky top-0 border-b border-slate-200 bg-white p-4">
+        <Link to="/" className="flex items-center gap-2.5" data-tour="tour-logo">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
+            <Icon d={Icons.clipboard} className="h-5 w-5" />
+          </span>
+          <span className="text-lg font-bold tracking-tight text-slate-900">
+            Attend<span className="text-brand-600">It</span>
+          </span>
+        </Link>
+      </div>
       <nav className="sticky top-16 flex flex-col gap-1 p-4">
         {links.map((link) => (
           <NavLink
