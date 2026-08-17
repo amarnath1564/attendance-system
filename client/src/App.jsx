@@ -14,6 +14,7 @@ import GlobalAttendanceHistory from './pages/GlobalAttendanceHistory.jsx';
 import SessionDetail from './pages/SessionDetail.jsx';
 import StudentHistory from './pages/StudentHistory.jsx';
 import Settings from './pages/Settings.jsx';
+import Faq from './pages/Faq.jsx';
 
 function OnlineWatcher() {
   const { setOnline } = useApp();
@@ -72,6 +73,7 @@ export default function App() {
           <Route path="/classes/:id/history/:sessionId" element={<SessionDetail />} />
           <Route path="/classes/:id/students/:studentId" element={<StudentHistory />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/faq" element={<Faq />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

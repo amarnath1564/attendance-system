@@ -32,7 +32,7 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="hidden w-56 shrink-0 border-r border-slate-200 bg-white lg:block">
+    <aside className="hidden w-56 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col">
       <div className="sticky top-0 flex h-16 items-center border-b border-slate-200 bg-white px-4">
         <Link to="/" className="flex items-center gap-2.5" data-tour="tour-logo">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white">
@@ -44,7 +44,7 @@ export default function Sidebar() {
         </Link>
       </div>
       <LiveClock />
-      <nav className="flex flex-col gap-1 border-t border-slate-200 px-4 pt-4">
+      <nav className="flex flex-1 flex-col gap-1 border-t border-slate-200 px-4 pt-4">
         {links.map((link) => (
           <NavLink
             key={link.to}
@@ -64,6 +64,21 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      <div className="border-t border-slate-200 p-4">
+        <NavLink
+          to="/faq"
+          className={({ isActive }) =>
+            `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
+              isActive
+                ? 'bg-brand-50 text-brand-700'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`
+          }
+        >
+          <Icon d={Icons.info} className="h-5 w-5" />
+          FAQ
+        </NavLink>
+      </div>
     </aside>
   );
 }
