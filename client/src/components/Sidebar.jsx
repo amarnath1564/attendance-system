@@ -1,5 +1,27 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Icons, Icon } from './icons.jsx';
+
+function LiveClock() {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const date = now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  const day = now.toLocaleDateString('en-US', { weekday: 'long' });
+
+  return (
+    <div className="px-4 pt-2 pb-4">
+      <p className="text-2xl font-bold tabular-nums text-slate-900">{time}</p>
+      <p className="mt-0.5 text-sm text-slate-500">{day}</p>
+      <p className="text-sm text-slate-500">{date}</p>
+    </div>
+  );
+}
 
 export default function Sidebar() {
   const links = [
@@ -19,7 +41,8 @@ export default function Sidebar() {
           </span>
         </Link>
       </div>
-      <nav className="flex flex-col gap-1 p-4">
+      <LiveClock />
+      <nav className="flex flex-col gap-1 border-t border-slate-200 px-4 pt-4">
         {links.map((link) => (
           <NavLink
             key={link.to}

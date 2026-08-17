@@ -225,8 +225,6 @@ export default function Dashboard() {
     setShowTour(false);
   };
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-
   const unfinished = useLiveQuery(async () => {
     if (!classes || classes.length === 0) return [];
     const out = [];
@@ -248,7 +246,6 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl mt-8">
             {greeting()}, Professor {teacher?.name?.split(' ')[0] || '…'}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">{today}</p>
         </div>
       </div>
 
