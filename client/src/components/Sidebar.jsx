@@ -15,6 +15,7 @@ export default function Sidebar() {
             key={link.to}
             to={link.to}
             end={link.to === '/'}
+            data-tour={link.to === '/history' ? 'tour-history' : undefined}
             className={({ isActive }) =>
               `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
                 isActive

@@ -54,7 +54,7 @@ function ClassCard({ klass, navigate, onDelete }) {
   ];
 
   return (
-    <div className="card fade-in flex flex-col p-5 transition hover:shadow-lift">
+    <div className="card fade-in flex flex-col p-5 transition hover:shadow-lift" data-tour="tour-class-card">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 text-left">
           <h3 className="truncate text-lg font-bold text-slate-900">
@@ -84,10 +84,10 @@ function ClassCard({ klass, navigate, onDelete }) {
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button className="btn-secondary flex-1" onClick={() => navigate(`/classes/${klass.id}`)}>
+        <button className="btn-secondary flex-1" data-tour="tour-manage" onClick={() => navigate(`/classes/${klass.id}`)}>
           <Icon d={Icons.users} className="h-4 w-4" /> Manage
         </button>
-        <button className="btn-primary flex-1" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
+        <button className="btn-primary flex-1" data-tour="tour-take-attendance" onClick={() => navigate(`/classes/${klass.id}/attendance`)}>
           {inProgress ? 'Continue' : 'Take Attendance'}
         </button>
       </div>
@@ -277,6 +277,7 @@ export default function Dashboard() {
             ))}
             <Link
               to="/classes/new"
+              data-tour="tour-add-class"
               className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-white/40 p-6 text-center transition hover:border-brand-400 hover:bg-brand-50/40"
             >
               <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand-50 text-brand-600">

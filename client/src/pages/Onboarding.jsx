@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTeacher } from '../db/repositories.js';
 import { useApp } from '../state/AppContext.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
+import WelcomeModal from '../components/WelcomeModal.jsx';
+import FeatureTour from '../components/FeatureTour.jsx';
+import db from '../db/db.js';
 
 export default function Onboarding() {
   const { pushToast } = useApp();
@@ -11,6 +14,9 @@ export default function Onboarding() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [profileCreated, setProfileCreated] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [showTour, setShowTour] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -22,13 +28,31 @@ export default function Onboarding() {
     setError('');
     try {
       await createTeacher({ name, email });
+      await db.settings.put({ key: 'tour_completed', value: false });
       pushToast({ type: 'success', title: 'Profile created', message: `Welcome, ${name.trim()}!` });
-      navigate('/');
+      setProfileCreated(true);
+      setShowWelcome(true);
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSkipTour = async () => {
+    await db.settings.put({ key: 'tour_completed', value: true });
+    navigate('/');
+  };
+
+  const handleStartTour = () => {
+    setShowWelcome(false);
+    setShowTour(true);
+  };
+
+  const handleTourComplete = async () => {
+    await db.settings.put({ key: 'tour_completed', value: true });
+    setShowTour(false);
+    navigate('/');
   };
 
   return (
@@ -90,6 +114,16 @@ export default function Onboarding() {
           </div>
         </div>
       </div>
+
+      <WelcomeModal
+        open={showWelcome}
+        onClose={handleSkipTour}
+        onStartTour={handleStartTour}
+      />
+      <FeatureTour
+        open={showTour}
+        onComplete={handleTourComplete}
+      />
     </div>
   );
 }
