@@ -267,7 +267,7 @@ export default function Dashboard() {
       )}
 
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-slate-900">My Classes <span className="text-slate-400">·</span> <span className="text-slate-500">{classes?.length || 0}</span></h2>
+        <h2 className="text-lg font-bold text-slate-900">My Classes <span className="text-slate-400">·</span> <span className="text-sm font-semibold text-slate-500">{classes?.length || 0} class{(classes || []).length === 1 ? '' : 'es'}</span></h2>
         <div className="flex items-center gap-2">
           <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
             <button
