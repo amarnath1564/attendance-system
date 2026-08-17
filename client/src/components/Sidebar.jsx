@@ -15,9 +15,9 @@ function LiveClock() {
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
 
   return (
-    <div className="px-4 pt-2 pb-4 text-center">
-      <p className="text-3xl font-bold tabular-nums text-slate-900">{time}</p>
-      <div className="mt-0.5 text-right">
+    <div className="px-4 pt-2 pb-4">
+      <p className="text-center text-3xl font-bold tabular-nums text-slate-900">{time}</p>
+      <div className="mt-0.5 text-right pr-[1.5ch]">
         <p className="text-sm text-slate-500">{day}</p>
         <p className="text-sm text-slate-500">{date}</p>
       </div>
