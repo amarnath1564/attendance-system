@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PageHeader } from '../components/ui.jsx';
+import { BackLink, PageHeader } from '../components/ui.jsx';
 import { Icons, Icon } from '../components/icons.jsx';
 
 const faqs = [
@@ -91,7 +91,10 @@ function FaqItem({ item }) {
 export default function Faq() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
-      <PageHeader title="FAQ" subtitle="Frequently asked questions about AttendIt." />
+      <BackLink to="/" label="Dashboard" />
+      <div className="mt-4">
+        <PageHeader title="FAQ" subtitle="Frequently asked questions about AttendIt." />
+      </div>
       <div className="space-y-3">
         {faqs.map((item, i) => (
           <FaqItem key={i} item={item} />
