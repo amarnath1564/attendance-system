@@ -333,31 +333,28 @@ export default function AttendanceSession() {
 
     const alreadyMarked = records[current?.id];
     const isLast = index === students.length - 1;
+    const studentId = current?.prn_number || current?.application_number || '—';
     return (
       <div className="fixed inset-0 z-40 bg-slate-950 text-white">
         <div className="flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-8 text-center">
           <div className="w-full max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.4em] text-slate-400">{klass?.class_name}</p>
-            {klass?.section && <p className="mt-2 text-sm font-semibold text-slate-300">{klass.section}</p>}
-            {session?.date && (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-slate-500">{formatDateLabel(session.date)}</p>
-            )}
+            <div className="absolute top-6 right-6">
+              {alreadyMarked ? (
+                <span className="inline-flex rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
+                  Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'}
+                </span>
+              ) : (
+                <span className="inline-flex rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
+                  {index + 1} / {total} — waiting for mark
+                </span>
+              )}
+            </div>
 
-            <p className="mt-10 text-lg font-bold tracking-tight text-slate-400 sm:text-xl">{current?.application_number || '—'}</p>
+            <p className="mt-10 text-lg font-bold tracking-tight text-slate-400 sm:text-xl">{studentId}</p>
             <h1 className="mx-auto mt-3 max-w-4xl break-words text-5xl font-black leading-tight tracking-tight text-white sm:text-7xl">
               {current?.name}
             </h1>
             <p className="mt-3 text-base font-semibold text-slate-300 sm:text-lg">Roll No: {current?.roll_number || '—'}</p>
-
-            {alreadyMarked ? (
-              <div className="mt-8 inline-flex rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
-                Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next continues
-              </div>
-            ) : (
-              <div className="mt-8 inline-flex rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
-                {index + 1} / {total} — waiting for mark
-              </div>
-            )}
 
             <div className="mt-8 flex items-center justify-center gap-5 text-lg font-black">
               <span className="text-emerald-400">{presentCount} Present</span>
