@@ -113,6 +113,7 @@ export default function ClassSetup() {
     if (!file) return;
     if (!name.trim()) {
       setError('Please enter a class name before uploading a CSV.');
+      e.target.value = '';
       return;
     }
     const reader = new FileReader();
