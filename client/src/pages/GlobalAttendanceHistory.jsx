@@ -163,17 +163,16 @@ export default function GlobalAttendanceHistory() {
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="card p-4 sm:p-5 lg:w-[520px] shrink-0">
             <div className="mb-4 flex items-center justify-between gap-3">
-              <div className="text-left">
+              <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
+                ← Previous
+              </button>
+              <div className="text-center">
                 <p className="text-lg font-black text-slate-900">{monthLabel}</p>
                 <p className="text-xs text-slate-500">Local attendance records</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
-                  Previous Month
-                </button>
-                <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date())}>Today</button>
                 <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
-                  Next Month
+                  Next →
                 </button>
               </div>
             </div>
@@ -186,11 +185,12 @@ export default function GlobalAttendanceHistory() {
 
             <div className="grid grid-cols-7 gap-1">
               {monthGrid.cells.map((date) => {
-                const key = date.toISOString().slice(0, 10);
                 const dayKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 const hasSessions = !!sessionByDate[dayKey];
                 const isCurrentMonth = date.getMonth() === month.getMonth();
-                const isToday = key === new Date().toISOString().slice(0, 10);
+                const now = new Date();
+                const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                const isToday = dayKey === todayKey;
                 const isSelected = selectedDate === dayKey;
                 const sessions = sessionByDate[dayKey] || [];
                 const totalCount = sessions.reduce((sum, s) => sum + s.counts.total, 0);
@@ -200,9 +200,9 @@ export default function GlobalAttendanceHistory() {
                     onClick={() => setSelectedDate(isSelected ? null : dayKey)}
                     className={[
                       'relative flex min-h-[64px] flex-col rounded-lg border p-1 text-left transition',
-                      isCurrentMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 text-slate-400',
-                      isToday ? 'ring-2 ring-brand-300' : '',
-                      hasSessions ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : 'hover:bg-slate-50',
+                      isToday ? 'border-brand-300 bg-brand-50 ring-2 ring-brand-300' : isCurrentMonth ? 'border-slate-200 bg-white' : 'border-slate-100 bg-slate-50 text-slate-400',
+                      hasSessions && !isToday ? 'border-emerald-200 bg-emerald-50/50 hover:bg-emerald-50' : '',
+                      isToday ? '' : 'hover:bg-slate-50',
                       isSelected ? 'ring-2 ring-brand-500 border-brand-300' : '',
                     ].join(' ')}
                   >
