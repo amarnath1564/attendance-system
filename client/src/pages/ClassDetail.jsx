@@ -513,7 +513,7 @@ export default function ClassDetail() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filtered.map((s) => (
-                      <tr key={s.id} className={`hover:bg-slate-50/60 ${s.status === STUDENT_STATUS.INACTIVE ? 'opacity-60' : ''}`}>
+                      <tr key={s.id} className="hover:bg-slate-50/60">
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.roll_number}</td>
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.prn_number}</td>
                         <td className="px-4 py-3 font-mono text-xs text-slate-700">{s.application_number}</td>
