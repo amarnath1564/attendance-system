@@ -350,11 +350,10 @@ export default function AttendanceSession() {
               )}
             </div>
 
-            <p className="mt-10 text-lg font-bold tracking-tight text-slate-400 sm:text-xl">{studentId}</p>
+            <p className="mt-10 text-lg font-bold tracking-tight text-slate-400 sm:text-xl">{current?.roll_number || '—'} <span className="text-slate-600">·</span> {studentId}</p>
             <h1 className="mx-auto mt-3 max-w-4xl break-words text-5xl font-black leading-tight tracking-tight text-white sm:text-7xl">
               {current?.name}
             </h1>
-            <p className="mt-3 text-base font-semibold text-slate-300 sm:text-lg">Roll No: {current?.roll_number || '—'}</p>
 
             <div className="mt-8 flex items-center justify-center gap-5 text-lg font-black">
               <span className="text-emerald-400">{presentCount} Present</span>
