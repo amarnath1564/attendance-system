@@ -10,13 +10,13 @@ function LiveClock() {
     return () => clearInterval(interval);
   }, []);
 
-  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const date = now.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
   const day = now.toLocaleDateString('en-US', { weekday: 'long' });
 
   return (
     <div className="px-4 pt-2 pb-4">
-      <p className="text-2xl font-bold tabular-nums text-slate-900">{time}</p>
+      <p className="text-3xl font-bold tabular-nums text-slate-900">{time}</p>
       <p className="mt-0.5 text-sm text-slate-500">{day}</p>
       <p className="text-sm text-slate-500">{date}</p>
     </div>
