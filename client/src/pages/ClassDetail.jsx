@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import db, { STUDENT_STATUS, RECORD_STATUS } from '../db/db.js';
@@ -25,6 +25,17 @@ function StudentForm({ open, onClose, student, classId, onSaved }) {
   const [email, setEmail] = useState(student?.email || '');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setApp(student?.application_number || '');
+      setRoll(student?.roll_number || '');
+      setPrn(student?.prn_number || '');
+      setName(student?.name || '');
+      setEmail(student?.email || '');
+      setError('');
+    }
+  }, [open, student]);
 
   const submit = async (e) => {
     e.preventDefault();
