@@ -15,8 +15,6 @@ export function matchHeader(header) {
   return null;
 }
 
-const REQUIRED = ['application_number', 'roll_number', 'name'];
-
 export function findHeaderRow(rows, maxScan = 6) {
   for (let i = 0; i < Math.min(rows.length, maxScan); i += 1) {
     const cols = rows[i].map((c) => c.trim()).filter((c) => c !== '');
@@ -26,7 +24,9 @@ export function findHeaderRow(rows, maxScan = 6) {
       const key = matchHeader(col);
       if (key) matched.add(key);
     }
-    if (REQUIRED.every((r) => matched.has(r))) return i;
+    if (matched.has('name') && (matched.has('application_number') || matched.has('roll_number') || matched.has('prn_number'))) {
+      return i;
+    }
   }
   return -1;
 }
@@ -47,8 +47,8 @@ export function parseStudentRows(rows, manualColumns = null) {
     return {
       ok: false,
       error:
-        'Could not find a valid header row. Required columns: Application Number, Roll Number, Student Name. Email and Status are optional.',
-      missingColumns: REQUIRED,
+        'Could not find a valid header row. Required columns: Student Name and at least one of Application Number, Roll Number, or PRN Number.',
+      missingColumns: [],
       students: [],
       summary: { rowsFound: rows.length, valid: 0, duplicates: 0, invalid: 0 },
     };
@@ -57,19 +57,21 @@ export function parseStudentRows(rows, manualColumns = null) {
   const { headers, columns: detectedColumns } = buildHeaders(rows, headerIndex);
   const columns = manualColumns && typeof manualColumns === 'object' ? { ...detectedColumns, ...manualColumns } : detectedColumns;
 
-  const missing = REQUIRED.filter((r) => !(r in columns));
-  if (missing.length) {
-    const names = {
-      application_number: 'Application Number',
-      roll_number: 'Roll Number',
-      name: 'Student Name',
-    };
+  if (!('name' in columns)) {
     return {
       ok: false,
-      error: `Missing required column${missing.length > 1 ? 's' : ''}: ${missing
-        .map((m) => names[m])
-        .join(', ')}.`,
-      missingColumns: missing,
+      error: 'Missing required column: Student Name.',
+      missingColumns: ['name'],
+      students: [],
+      summary: { rowsFound: rows.length, valid: 0, duplicates: 0, invalid: 0 },
+    };
+  }
+
+  if (!('application_number' in columns) && !('roll_number' in columns) && !('prn_number' in columns)) {
+    return {
+      ok: false,
+      error: 'Missing identifier column. Need at least one of: Application Number, Roll Number, or PRN Number.',
+      missingColumns: [],
       students: [],
       summary: { rowsFound: rows.length, valid: 0, duplicates: 0, invalid: 0 },
     };
@@ -79,40 +81,45 @@ export function parseStudentRows(rows, manualColumns = null) {
   const valid = [];
   const seenApp = new Map();
   const seenRoll = new Map();
+  const seenPrn = new Map();
   const duplicates = [];
   const invalid = [];
+  let autoId = 1;
 
   for (let i = headerIndex + 1; i < rows.length; i += 1) {
     const row = rows[i];
     if (!row.some((c) => String(c).trim() !== '')) continue;
 
+    const name = (row[columns.name] ?? '').toString().trim();
     const app = (row[columns.application_number] ?? '').toString().trim();
     const roll = (row[columns.roll_number] ?? '').toString().trim();
     const prn = columns.prn_number != null ? (row[columns.prn_number] ?? '').toString().trim() : '';
-    const name = (row[columns.name] ?? '').toString().trim();
     const email = columns.email != null ? (row[columns.email] ?? '').toString().trim() : '';
     const statusRaw = columns.status != null ? (row[columns.status] ?? '').toString().trim() : '';
 
     let reason = '';
     if (!name) reason = 'Missing student name';
-    else if (!app) reason = 'Missing application number';
 
     if (reason) {
       invalid.push({ row: i + 1, reason, app, roll, name });
       continue;
     }
 
-    const duplicateKey = app || roll;
-    if (duplicateKey && (seenApp.has(app) || seenRoll.has(roll))) {
-      duplicates.push({ row: i + 1, app, roll, name });
+    const finalApp = app || `AUTO-${String(autoId++).padStart(4, '0')}`;
+    const finalRoll = roll || finalApp;
+
+    const duplicateKey = finalApp || finalRoll || prn;
+    if (duplicateKey && (seenApp.has(finalApp) || seenRoll.has(finalRoll) || (prn && seenPrn.has(prn)))) {
+      duplicates.push({ row: i + 1, app: finalApp, roll: finalRoll, name });
       continue;
     }
 
     const status = /inactive/i.test(statusRaw) ? 'inactive' : 'active';
-    const student = { application_number: app, roll_number: roll, prn_number: prn, name, email, status, duplicate: false };
+    const student = { application_number: finalApp, roll_number: finalRoll, prn_number: prn, name, email, status, duplicate: false };
     valid.push(student);
-    if (app) seenApp.set(app, student);
-    if (roll) seenRoll.set(roll, student);
+    if (finalApp) seenApp.set(finalApp, student);
+    if (finalRoll) seenRoll.set(finalRoll, student);
+    if (prn) seenPrn.set(prn, student);
   }
 
   for (const item of valid) {
