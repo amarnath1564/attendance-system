@@ -17,8 +17,9 @@ function PreviewTable({ students }) {
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>
-              <th className="px-4 py-2.5">Application Number</th>
               <th className="px-4 py-2.5">Roll Number</th>
+              <th className="px-4 py-2.5">PRN Number</th>
+              <th className="px-4 py-2.5">Application Number</th>
               <th className="px-4 py-2.5">Name</th>
               <th className="px-4 py-2.5">Email</th>
             </tr>
@@ -26,8 +27,9 @@ function PreviewTable({ students }) {
           <tbody className="divide-y divide-slate-100">
             {students.slice(0, 60).map((s, i) => (
               <tr key={i} className="hover:bg-slate-50/60">
-                <td className="px-4 py-2 font-mono text-xs text-slate-600">{s.application_number}</td>
                 <td className="px-4 py-2 font-mono text-xs text-slate-600">{s.roll_number}</td>
+                <td className="px-4 py-2 font-mono text-xs text-slate-600">{s.prn_number}</td>
+                <td className="px-4 py-2 font-mono text-xs text-slate-600">{s.application_number}</td>
                 <td className="px-4 py-2 font-medium text-slate-900">{s.name}</td>
                 <td className="px-4 py-2 text-xs text-slate-500">{s.email}</td>
               </tr>
