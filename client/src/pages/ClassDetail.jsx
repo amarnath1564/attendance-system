@@ -344,9 +344,9 @@ export default function ClassDetail() {
             <button className="btn-secondary" onClick={exportAttendanceCsv}>
               <Icon d={Icons.download} className="h-4 w-4" /> Export CSV
             </button>
-            <span className="flex-1" />
           </>
         )}
+        <span className="flex-1" />
         <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
           <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
         </button>
