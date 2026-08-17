@@ -503,12 +503,12 @@ export default function ClassDetail() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Roll Number</th>
-                      <th className="px-4 py-3">PRN No.</th>
-                      <th className="px-4 py-3">Application Number</th>
-                      <th className="px-4 py-3">Student Name</th>
-                      <th className="hidden px-4 py-3 md:table-cell">Email</th>
-                      <th className="px-4 py-3 text-right">Actions</th>
+                      <th className="px-4 py-3 text-center">Roll Number</th>
+                      <th className="px-4 py-3 text-center">PRN No.</th>
+                      <th className="px-4 py-3 text-center">Application Number</th>
+                      <th className="px-4 py-3 text-center">Student Name</th>
+                      <th className="hidden px-4 py-3 text-center md:table-cell">Email</th>
+                      <th className="px-4 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
