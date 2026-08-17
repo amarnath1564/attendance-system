@@ -150,7 +150,7 @@ export default function GlobalAttendanceHistory() {
           value={selectedClassId}
           onChange={(e) => setSelectedClassId(e.target.value)}
         >
-          <option value="all">All Classes</option>
+          <option value="all">Select a Class</option>
           {(classes || []).map((c) => (
             <option key={c.id} value={c.id}>
               {c.class_name}
