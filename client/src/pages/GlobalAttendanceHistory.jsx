@@ -219,7 +219,7 @@ export default function GlobalAttendanceHistory() {
           <div className="flex-1 min-w-0">
             {selectedDate ? (
               <>
-                <div className="mb-3 mt-1 flex items-center justify-between">
+                <div className="mb-3 mt-2 flex items-center justify-between">
                   <h3 className="text-lg font-bold text-slate-900">{formatDate(fromDateKey(selectedDate))}</h3>
                   <button className="btn-secondary text-sm" onClick={() => setSelectedDate(null)}>
                     <Icon d={Icons.x} className="h-4 w-4" /> Close
