@@ -346,10 +346,12 @@ export default function ClassDetail() {
             </button>
           </>
         )}
-        <span className="flex-1" />
-        <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
-          <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
-        </button>
+        {tab !== 'stats' && <span className="flex-1" />}
+        {tab !== 'stats' && (
+          <button className="btn-primary" onClick={() => { setEditingStudent(null); setFormOpen(true); }}>
+            <Icon d={Icons.plus} className="h-4 w-4" /> Add Student
+          </button>
+        )}
       </div>
 
       <div className="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1">
