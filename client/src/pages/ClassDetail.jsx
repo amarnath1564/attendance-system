@@ -519,6 +519,7 @@ export default function ClassDetail() {
                       <th className="px-4 py-3 text-center">Application Number</th>
                       <th className="px-4 py-3 text-center">Student Name</th>
                       <th className="hidden px-4 py-3 text-center md:table-cell">Email</th>
+                      <th className="px-4 py-3 text-center">Status</th>
                       <th className="px-4 py-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -535,20 +536,20 @@ export default function ClassDetail() {
                             </span>
                             <div className="min-w-0">
                               <p className="truncate font-semibold text-slate-900">{s.name}</p>
-                              <div className="flex items-center gap-1.5">
-                                <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
-                                <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                                  s.status === STUDENT_STATUS.ACTIVE
-                                    ? 'bg-emerald-50 text-emerald-700'
-                                    : 'bg-slate-100 text-slate-500'
-                                }`}>
-                                  {s.status === STUDENT_STATUS.ACTIVE ? 'Active' : 'Inactive'}
-                                </span>
-                              </div>
+                              <p className="truncate text-xs text-slate-400 md:hidden">{s.email}</p>
                             </div>
                           </div>
                         </td>
                         <td className="hidden px-4 py-3 text-xs text-slate-500 md:table-cell">{s.email}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            s.status === STUDENT_STATUS.ACTIVE
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            {s.status === STUDENT_STATUS.ACTIVE ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end">
                             <Dropdown
