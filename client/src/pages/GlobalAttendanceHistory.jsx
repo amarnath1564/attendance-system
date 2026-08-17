@@ -159,7 +159,21 @@ export default function GlobalAttendanceHistory() {
         </select>
       </div>
 
-      {rows.length > 0 ? (
+      {selectedClassId === 'all' ? (
+        classes && classes.length > 0 ? (
+          <EmptyState
+            icon={Icons.calendar}
+            title="Select a class to view the history"
+            message="Choose a class from the filter above to see its attendance records."
+          />
+        ) : (
+          <EmptyState
+            icon={Icons.history}
+            title="No attendance recorded yet"
+            message="Create a class and take attendance first. Records will appear here."
+          />
+        )
+      ) : rows.length > 0 ? (
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="card p-4 sm:p-5 lg:w-[520px] shrink-0">
             <div className="mb-4 flex items-center justify-between gap-3">
@@ -254,17 +268,11 @@ export default function GlobalAttendanceHistory() {
             )}
           </div>
         </div>
-      ) : classes && classes.length > 0 ? (
-        <EmptyState
-          icon={Icons.calendar}
-          title="Select a class to view the history"
-          message="Choose a class from the filter above to see its attendance records."
-        />
       ) : (
         <EmptyState
-          icon={Icons.history}
-          title="No attendance recorded yet"
-          message="Create a class and take attendance first. Records will appear here."
+          icon={Icons.calendar}
+          title="No sessions found"
+          message="No attendance was taken for this class yet."
         />
       )}
     </div>
