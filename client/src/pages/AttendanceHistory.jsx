@@ -187,9 +187,15 @@ export default function AttendanceHistory() {
               <>
                 <div className="mb-3 mt-5 flex items-center justify-between">
                   <h3 className="text-lg font-bold text-slate-900">{formatDate(fromDateKey(selectedDate))}</h3>
-                  <button className="btn-secondary text-sm" onClick={() => setSelectedDate(null)}>
-                    <Icon d={Icons.x} className="h-4 w-4" /> Close
-                  </button>
+                  {selectedDate === todayKey ? (
+                    <button className="btn-secondary text-sm" disabled>
+                      <Icon d={Icons.check} className="h-4 w-4" /> Today
+                    </button>
+                  ) : (
+                    <button className="btn-secondary text-sm" onClick={() => { setMonth(new Date()); setSelectedDate(todayKey); }}>
+                      <Icon d={Icons.home} className="h-4 w-4" /> Back to Today
+                    </button>
+                  )}
                 </div>
                 {selectedSessions.length > 0 ? (
                   <div className="space-y-3">
