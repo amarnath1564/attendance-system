@@ -3,12 +3,6 @@ import { Icons, Icon } from './icons.jsx';
 
 const TOUR_STEPS = [
   {
-    target: 'tour-logo',
-    title: 'AttendIt',
-    text: 'This is your app header. Click here anytime to return to the dashboard.',
-    placement: 'bottom',
-  },
-  {
     target: 'tour-add-class',
     title: 'Create a Class',
     text: 'Start here — create a class and import students via CSV or manually.',
