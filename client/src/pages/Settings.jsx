@@ -89,7 +89,7 @@ export default function Settings() {
               browser/device is reset. Backups are never uploaded anywhere.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               className="btn-primary"
               onClick={async () => {
@@ -125,8 +125,7 @@ export default function Settings() {
                 reader.readAsText(f);
               }}
             />
-          </div>
-          <div className="mt-5 border-t border-slate-100 pt-5">
+            <div className="flex-1" />
             <button
               className="btn-danger"
               onClick={() => {
