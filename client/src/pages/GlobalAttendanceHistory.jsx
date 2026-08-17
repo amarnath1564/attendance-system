@@ -254,11 +254,17 @@ export default function GlobalAttendanceHistory() {
             )}
           </div>
         </div>
+      ) : classes && classes.length > 0 ? (
+        <EmptyState
+          icon={Icons.calendar}
+          title="Select a class to view the history"
+          message="Choose a class from the filter above to see its attendance records."
+        />
       ) : (
         <EmptyState
           icon={Icons.history}
           title="No attendance recorded yet"
-          message="Attendance you submit will appear here, stored locally on this device."
+          message="Create a class and take attendance first. Records will appear here."
         />
       )}
     </div>
