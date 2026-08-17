@@ -84,7 +84,6 @@ export function parseStudentRows(rows, manualColumns = null) {
   const seenPrn = new Map();
   const duplicates = [];
   const invalid = [];
-  let autoId = 1;
 
   for (let i = headerIndex + 1; i < rows.length; i += 1) {
     const row = rows[i];
@@ -105,8 +104,8 @@ export function parseStudentRows(rows, manualColumns = null) {
       continue;
     }
 
-    const finalApp = app || `AUTO-${String(autoId++).padStart(4, '0')}`;
-    const finalRoll = roll || finalApp;
+    const finalApp = app || '';
+    const finalRoll = roll || '';
 
     const duplicateKey = finalApp || finalRoll || prn;
     if (duplicateKey && (seenApp.has(finalApp) || seenRoll.has(finalRoll) || (prn && seenPrn.has(prn)))) {
