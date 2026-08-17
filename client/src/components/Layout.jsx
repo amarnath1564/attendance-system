@@ -53,7 +53,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main className="flex-1">
+        <main className="flex-1 lg:pl-2">
           <Outlet />
         </main>
 
