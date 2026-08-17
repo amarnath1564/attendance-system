@@ -129,6 +129,10 @@ export default function AttendanceHistory() {
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="card p-4 sm:p-5 lg:w-[520px] shrink-0">
             <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="text-left">
+                <p className="text-lg font-black text-slate-900">{monthLabel}</p>
+                <p className="text-xs text-slate-500">Local attendance records</p>
+              </div>
               <div className="flex items-center gap-2">
                 <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}>
                   Previous Month
@@ -137,10 +141,6 @@ export default function AttendanceHistory() {
                 <button className="btn-secondary px-3 py-2 text-sm" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}>
                   Next Month
                 </button>
-              </div>
-              <div className="text-right">
-                <p className="text-lg font-black text-slate-900">{monthLabel}</p>
-                <p className="text-xs text-slate-500">Local attendance records</p>
               </div>
             </div>
 
