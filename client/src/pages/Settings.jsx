@@ -32,6 +32,7 @@ export default function Settings() {
   const [importOpen, setImportOpen] = useState(false);
   const [importError, setImportError] = useState('');
   const [clearOpen, setClearOpen] = useState(false);
+  const [clearStep, setClearStep] = useState('backup');
   const [clearConfirmCode, setClearConfirmCode] = useState('');
   const [clearUserInput, setClearUserInput] = useState('');
   const fileRef = useRef(null);
@@ -129,9 +130,7 @@ export default function Settings() {
             <button
               className="btn-danger"
               onClick={() => {
-                const code = String(Math.floor(Math.random() * 9000) + 1000);
-                setClearConfirmCode(code);
-                setClearUserInput('');
+                setClearStep('backup');
                 setClearOpen(true);
               }}
             >
@@ -181,45 +180,97 @@ export default function Settings() {
         </div>
       </Modal>
 
-      <Confirm
+      <Modal
         open={clearOpen}
         onClose={() => {
           setClearOpen(false);
+          setClearStep('backup');
           setClearConfirmCode('');
           setClearUserInput('');
         }}
-        onConfirm={async () => {
-          try {
-            // 1. Create and download backup first
-            const backup = await exportBackup();
-            downloadBackup(backup);
-            pushToast({ type: 'success', title: 'Backup downloaded', message: 'Your data has been saved before deletion.' });
-            
-            // 2. Give time for download to start, then clear data
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // 3. Clear all data
-            await Promise.all(
-              ['teachers', 'classes', 'students', 'attendance_sessions', 'attendance_records', 'settings'].map((t) =>
-                db.table(t).clear()
-              )
-            );
-            
-            // 4. Reload page
-            pushToast({ type: 'info', title: 'All data cleared', message: 'You can set up your profile again.' });
-            window.location.reload();
-          } catch (err) {
-            pushToast({ type: 'error', title: 'Error clearing data', message: err.message });
-          }
-        }}
-        title="Clear all local data?"
-        message="This permanently deletes your profile, classes, students and attendance from this browser. A backup will be downloaded automatically before deletion."
-        confirmCode={clearConfirmCode}
-        userInput={clearUserInput}
-        onInputChange={setClearUserInput}
-        confirmLabel="Clear Everything"
-        danger
-      />
+        title={clearStep === 'backup' ? 'Create a backup first?' : 'Clear all local data?'}
+        size="sm"
+      >
+        {clearStep === 'backup' ? (
+          <>
+            <p className="text-sm leading-6 text-slate-600">
+              Since you are deleting everything, are you sure you don't want a backup? You can export your data now or continue without it.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-secondary" onClick={() => {
+                setClearStep('confirm');
+                const code = String(Math.floor(Math.random() * 90000) + 10000);
+                setClearConfirmCode(code);
+                setClearUserInput('');
+              }}>
+                Continue Without Backup
+              </button>
+              <button
+                className="btn-primary"
+                onClick={async () => {
+                  try {
+                    const backup = await exportBackup();
+                    downloadBackup(backup);
+                    pushToast({ type: 'success', title: 'Backup exported', message: 'Downloaded a local backup file.' });
+                    setClearStep('confirm');
+                    const code = String(Math.floor(Math.random() * 90000) + 10000);
+                    setClearConfirmCode(code);
+                    setClearUserInput('');
+                  } catch (err) {
+                    pushToast({ type: 'error', title: 'Export failed', message: err.message });
+                  }
+                }}
+              >
+                <Icon d={Icons.download} className="h-4 w-4" /> Export Backup
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm leading-6 text-slate-600">
+              This permanently deletes your profile, classes, students and attendance from this browser.
+              Type <span className="font-mono font-bold text-rose-600">{clearConfirmCode}</span> to confirm.
+            </p>
+            <input
+              className="input mt-4"
+              placeholder={`Enter ${clearConfirmCode.length} digits`}
+              value={clearUserInput}
+              onChange={(e) => setClearUserInput(e.target.value)}
+              autoFocus
+            />
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-secondary" onClick={() => {
+                setClearOpen(false);
+                setClearStep('backup');
+                setClearConfirmCode('');
+                setClearUserInput('');
+              }}>
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                disabled={clearUserInput !== clearConfirmCode}
+                onClick={async () => {
+                  try {
+                    await Promise.all(
+                      ['teachers', 'classes', 'students', 'attendance_sessions', 'attendance_records', 'settings'].map((t) =>
+                        db.table(t).clear()
+                      )
+                    );
+                    setClearOpen(false);
+                    pushToast({ type: 'info', title: 'All data cleared', message: 'You can set up your profile again.' });
+                    window.location.reload();
+                  } catch (err) {
+                    pushToast({ type: 'error', title: 'Error clearing data', message: err.message });
+                  }
+                }}
+              >
+                Clear Everything
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
