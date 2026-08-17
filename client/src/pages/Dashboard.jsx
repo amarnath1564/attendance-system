@@ -56,14 +56,14 @@ function ClassCard({ klass, navigate, onDelete }) {
   return (
     <div className="card fade-in flex flex-col p-5 transition hover:shadow-lift">
       <div className="flex items-start justify-between gap-2">
-        <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 text-left">
+        <div className="min-w-0 text-left">
           <h3 className="truncate text-lg font-bold text-slate-900">
             {klass.class_name}
           </h3>
           <p className="mt-1 text-sm text-slate-500">
             {klass.year ? `Year ${klass.year}` : ''}{klass.semester ? `${klass.year ? ' · ' : ''}Semester ${klass.semester}` : ''}{klass.section ? `${klass.year || klass.semester ? ' · ' : ''}Section ${klass.section}` : ''}
           </p>
-        </button>
+        </div>
         <Dropdown items={menu} />
       </div>
 
@@ -126,7 +126,7 @@ function ClassListItem({ klass, navigate, onDelete }) {
 
   return (
     <div className="card fade-in flex items-center gap-4 p-4 transition hover:shadow-lift">
-      <button onClick={() => navigate(`/classes/${klass.id}`)} className="min-w-0 flex-1 text-left">
+      <div className="min-w-0 flex-1 text-left">
         <h3 className="truncate text-base font-bold text-slate-900">
           {klass.class_name}
         </h3>
@@ -142,7 +142,7 @@ function ClassListItem({ klass, navigate, onDelete }) {
             {lastSession ? `Last: ${formatDate(new Date(lastSession.date))}` : 'No attendance yet'}
           </span>
         </div>
-      </button>
+      </div>
       <div className="flex shrink-0 items-center gap-2">
         <button className="btn-secondary px-3 py-2 text-sm" onClick={() => navigate(`/classes/${klass.id}`)}>
           Manage
