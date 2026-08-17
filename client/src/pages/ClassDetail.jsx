@@ -272,10 +272,16 @@ export default function ClassDetail() {
   if (!klass) return null;
 
   const exportClassRoster = () => {
-    const rows = [['Application Number', 'Roll Number', 'Student Name', 'Email']];
+    const rows = [['Application Number', 'Roll Number', 'PRN Number', 'Student Name', 'Email', 'Status']];
     for (const student of allStudents || []) {
-      if (student.status !== STUDENT_STATUS.ACTIVE) continue;
-      rows.push([student.application_number, student.roll_number, student.name, student.email]);
+      rows.push([
+        student.application_number,
+        student.roll_number,
+        student.prn_number || '',
+        student.name,
+        student.email,
+        student.status === STUDENT_STATUS.ACTIVE ? 'Active' : 'Inactive',
+      ]);
     }
     downloadCsv(`${(klass.class_name || 'class').replace(/\s+/g, '-').toLowerCase()}-roster.csv`, rows.map((row) => row.join(',')).join('\n'));
     pushToast({ type: 'success', title: 'Roster exported', message: 'Downloaded a local CSV file.' });
