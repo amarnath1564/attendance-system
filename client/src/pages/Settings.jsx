@@ -229,7 +229,7 @@ export default function Settings() {
           <>
             <p className="text-sm leading-6 text-slate-600">
               This permanently deletes your profile, classes, students and attendance from this browser.
-              Type <span className="font-mono font-bold text-rose-600">{clearConfirmCode}</span> to confirm.
+              Type <span className="font-mono font-bold text-rose-600">{clearConfirmCode.split('').join(' ')}</span> to confirm.
             </p>
             <input
               className="input mt-4"
