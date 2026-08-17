@@ -145,6 +145,7 @@ export default function ClassDetail() {
 
   const [tab, setTab] = useState('overview');
   const [search, setSearch] = useState('');
+  const [showInactive, setShowInactive] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [removing, setRemoving] = useState(null);
@@ -257,6 +258,7 @@ export default function ClassDetail() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (allStudents || []).filter((s) => {
+      if (!showInactive && s.status === STUDENT_STATUS.INACTIVE) return false;
       if (!q) return true;
       return (
         s.name.toLowerCase().includes(q) ||
@@ -265,7 +267,7 @@ export default function ClassDetail() {
         s.email.toLowerCase().includes(q)
       );
     });
-  }, [allStudents, search]);
+  }, [allStudents, search, showInactive]);
 
   if (!klass) return null;
 
@@ -495,6 +497,15 @@ export default function ClassDetail() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+              />
+              Show inactive
+            </label>
           </div>
 
           {filtered.length > 0 ? (
