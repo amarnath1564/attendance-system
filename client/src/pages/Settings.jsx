@@ -229,15 +229,34 @@ export default function Settings() {
           <>
             <p className="text-sm leading-6 text-slate-600">
               This permanently deletes your profile, classes, students and attendance from this browser.
-              Type <span className="font-mono font-bold text-rose-600">{clearConfirmCode.split('').join(' ')}</span> to confirm.
             </p>
-            <input
-              className="input mt-4"
-              placeholder={`Enter ${clearConfirmCode.length} digits`}
-              value={clearUserInput}
-              onChange={(e) => setClearUserInput(e.target.value)}
-              autoFocus
-            />
+            <div className="mt-4 space-y-4">
+              <div className="rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Type these numbers to confirm:</p>
+                <p className="mt-2 font-mono text-2xl font-black text-amber-900">{clearConfirmCode.split('').join(' ')}</p>
+              </div>
+              <div>
+                <label className="label text-sm" htmlFor="clear-confirm-input">
+                  Confirmation Code
+                </label>
+                <input
+                  id="clear-confirm-input"
+                  type="text"
+                  className="input font-mono text-lg tracking-wider"
+                  placeholder="Enter the numbers above"
+                  value={clearUserInput}
+                  onChange={(e) => setClearUserInput(e.target.value)}
+                  autoComplete="off"
+                  autoFocus
+                />
+                {clearUserInput && clearUserInput !== clearConfirmCode && (
+                  <p className="mt-2 text-xs font-medium text-rose-600">Numbers don't match</p>
+                )}
+                {clearUserInput === clearConfirmCode && (
+                  <p className="mt-2 text-xs font-medium text-emerald-600">Verified — ready to delete</p>
+                )}
+              </div>
+            </div>
             <div className="mt-6 flex justify-end gap-2">
               <button className="btn-secondary" onClick={() => {
                 setClearOpen(false);
