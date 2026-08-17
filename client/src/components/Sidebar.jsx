@@ -17,7 +17,7 @@ function LiveClock() {
   return (
     <div className="px-4 pt-2 pb-4">
       <p className="text-center text-3xl font-bold tabular-nums text-slate-900">{time}</p>
-      <div className="mt-0.5 text-right pr-[1.5ch]">
+      <div className="mt-0.5 pl-[3.5ch]">
         <p className="text-sm text-slate-500">{day}</p>
         <p className="text-sm text-slate-500">{date}</p>
       </div>
