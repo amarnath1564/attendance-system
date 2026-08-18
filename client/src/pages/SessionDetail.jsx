@@ -136,22 +136,25 @@ export default function SessionDetail() {
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedStudents.size === list.length && list.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedStudents(new Set(list.map(({ student }) => student.id)));
-                        } else {
-                          setSelectedStudents(new Set());
-                        }
-                      }}
-                      disabled={!odMode}
-                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 disabled:opacity-30"
-                    />
-                    Roll Number
-                  </label>
+                  {odMode ? (
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedStudents.size === list.length && list.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedStudents(new Set(list.map(({ student }) => student.id)));
+                          } else {
+                            setSelectedStudents(new Set());
+                          }
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                      Roll Number
+                    </label>
+                  ) : (
+                    'Roll Number'
+                  )}
                 </th>
                 <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
@@ -165,24 +168,27 @@ export default function SessionDetail() {
                 return (
                   <tr key={student.id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedStudents.has(student.id)}
-                          onChange={(e) => {
-                            const next = new Set(selectedStudents);
-                            if (e.target.checked) {
-                              next.add(student.id);
-                            } else {
-                              next.delete(student.id);
-                            }
-                            setSelectedStudents(next);
-                          }}
-                          disabled={!odMode}
-                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 disabled:opacity-30"
-                        />
-                        {student.roll_number}
-                      </label>
+                      {odMode ? (
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedStudents.has(student.id)}
+                            onChange={(e) => {
+                              const next = new Set(selectedStudents);
+                              if (e.target.checked) {
+                                next.add(student.id);
+                              } else {
+                                next.delete(student.id);
+                              }
+                              setSelectedStudents(next);
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                          />
+                          {student.roll_number}
+                        </label>
+                      ) : (
+                        student.roll_number
+                      )}
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.prn_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
