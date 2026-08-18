@@ -353,7 +353,7 @@ export default function AttendanceSession() {
             <div className="absolute top-6 right-6">
               {alreadyMarked ? (
                 <span className="inline-flex rounded-full border border-slate-700 bg-slate-900 px-5 py-2 text-sm font-bold text-slate-300">
-                  Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : alreadyMarked.status === RECORD_STATUS.OD ? 'OD' : 'Absent'}
+                  Already marked {alreadyMarked.status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'}
                 </span>
               ) : (
                 <span className="inline-flex rounded-full border border-emerald-900 bg-emerald-950/60 px-5 py-2 text-sm font-bold text-emerald-300">
@@ -372,21 +372,13 @@ export default function AttendanceSession() {
               <span className="text-emerald-400">{presentCount} Present</span>
               <span className="text-slate-600">·</span>
               <span className="text-rose-400">{absentCount} Absent</span>
-              <span className="text-slate-600">·</span>
-              <span className="text-amber-400">{odCount} OD</span>
             </div>
 
             <div className="mx-auto mt-6 h-2 w-72 overflow-hidden rounded-full bg-slate-800">
               <div className="h-full rounded-full bg-brand-400 transition-all duration-300" style={{ width: `${progressPct}%` }} />
             </div>
 
-            <div className="mx-auto mt-10 grid w-full max-w-2xl grid-cols-3 gap-4 text-xl font-black sm:text-2xl">
-              <button
-                onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
-                className="rounded-2xl bg-emerald-600 px-5 py-4 text-white transition hover:bg-emerald-500 active:bg-emerald-700"
-              >
-                Present
-              </button>
+            <div className="mx-auto mt-10 grid w-full max-w-lg grid-cols-2 gap-4 text-xl font-black sm:text-2xl">
               <button
                 onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.ABSENT); }}
                 className="rounded-2xl border border-rose-700 bg-rose-900/40 px-5 py-4 text-rose-200 transition hover:bg-rose-900/70 active:bg-rose-900"
@@ -394,10 +386,10 @@ export default function AttendanceSession() {
                 Absent
               </button>
               <button
-                onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.OD); }}
-                className="rounded-2xl bg-amber-500 px-5 py-4 text-white transition hover:bg-amber-400 active:bg-amber-600"
+                onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
+                className="rounded-2xl bg-emerald-600 px-5 py-4 text-white transition hover:bg-emerald-500 active:bg-emerald-700"
               >
-                OD
+                {isLast ? 'Present & Finish ✓' : 'Present ✓'}
               </button>
             </div>
 
