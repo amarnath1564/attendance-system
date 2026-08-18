@@ -37,6 +37,7 @@ export default function SessionDetail() {
 
   const present = list.filter((x) => x.status === RECORD_STATUS.PRESENT).length;
   const absent = list.filter((x) => x.status === RECORD_STATUS.ABSENT).length;
+  const odCount = list.filter((x) => x.status === RECORD_STATUS.OD).length;
   const notMarked = list.filter((x) => !x.status).length;
   const pct = list.length ? ((present / list.length) * 100).toFixed(1) : '0.0';
 
@@ -81,7 +82,7 @@ export default function SessionDetail() {
         </div>
       </div>
 
-      <div className="mt-6 mb-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 mb-6 grid grid-cols-4 gap-3">
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-emerald-600">{present}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Present</p>
@@ -89,6 +90,10 @@ export default function SessionDetail() {
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-rose-600">{absent}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Absent</p>
+        </div>
+        <div className="card p-4 text-center">
+          <p className="text-2xl font-black text-amber-600">{odCount}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">OD</p>
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-slate-900">{pct}%</p>
