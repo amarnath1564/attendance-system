@@ -45,9 +45,6 @@ function Legend({ dark = false }) {
         <KeyCap dark={dark}>A</KeyCap> <span className="text-slate-400">→</span> Absent
       </span>
       <span className="flex items-center gap-1.5">
-        <KeyCap dark={dark}>O</KeyCap> <span className="text-slate-400">→</span> OD
-      </span>
-      <span className="flex items-center gap-1.5">
         <KeyCap dark={dark}>→</KeyCap> / <KeyCap dark={dark}>Next</KeyCap> <span className="text-slate-400">→</span> Present + Forward
       </span>
       <span className="flex items-center gap-1.5">
@@ -232,8 +229,6 @@ export default function AttendanceSession() {
         mark(RECORD_STATUS.PRESENT);
       } else if (e.key === 'a' || e.key === 'A') {
         mark(RECORD_STATUS.ABSENT);
-      } else if (e.key === 'o' || e.key === 'O') {
-        mark(RECORD_STATUS.OD);
       } else if (e.key === 'Backspace' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         goPrevious();
       } else if (presentationMode && e.key === 'Escape') {
@@ -518,7 +513,7 @@ export default function AttendanceSession() {
             <p className="mt-3 text-lg font-semibold text-slate-500">Roll No: {current?.roll_number || '—'}</p>
             {records[current?.id] && (
               <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-bold text-slate-600">
-                Already marked {records[current.id].status === RECORD_STATUS.PRESENT ? 'Present' : records[current.id].status === RECORD_STATUS.OD ? 'OD' : 'Absent'} — Next continues
+                Already marked {records[current.id].status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next continues
               </p>
             )}
           </div>
