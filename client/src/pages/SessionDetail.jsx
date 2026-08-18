@@ -96,8 +96,7 @@ export default function SessionDetail() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Students</h2>
+      <div className="mt-4 flex items-center justify-end">
         {odMode ? (
           <div className="flex items-center gap-2">
             <button
