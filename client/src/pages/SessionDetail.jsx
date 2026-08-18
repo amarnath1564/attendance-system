@@ -18,6 +18,7 @@ export default function SessionDetail() {
 
   const [localStatuses, setLocalStatuses] = useState({});
   const [saving, setSaving] = useState(null);
+  const [selectedStudents, setSelectedStudents] = useState(new Set());
 
   const effectiveRecords = useMemo(() => {
     if (!records) return {};
@@ -97,16 +98,16 @@ export default function SessionDetail() {
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Students</h2>
         <button
-          onClick={() => {
-            for (const { student, status } of list) {
-              if (status !== RECORD_STATUS.PRESENT && status !== RECORD_STATUS.ABSENT) continue;
-              if (status !== RECORD_STATUS.ABSENT) continue;
-              toggleStatus(student.id, RECORD_STATUS.OD);
+          onClick={async () => {
+            for (const studentId of selectedStudents) {
+              await toggleStatus(studentId, RECORD_STATUS.OD);
             }
+            setSelectedStudents(new Set());
           }}
-          className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+          disabled={selectedStudents.size === 0}
+          className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Mark Absent Students OD
+          Mark Selected OD {selectedStudents.size > 0 && `(${selectedStudents.size})`}
         </button>
       </div>
 
@@ -115,6 +116,20 @@ export default function SessionDetail() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
+                <th className="px-4 py-3 w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.size === list.length && list.length > 0}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedStudents(new Set(list.map(({ student }) => student.id)));
+                      } else {
+                        setSelectedStudents(new Set());
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  />
+                </th>
                 <th className="px-4 py-3">Roll Number</th>
                 <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
@@ -127,48 +142,74 @@ export default function SessionDetail() {
                 const isSaving = saving === student.id;
                 return (
                   <tr key={student.id} className="hover:bg-slate-50/60">
+                    <td className="px-4 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedStudents.has(student.id)}
+                        onChange={(e) => {
+                          const next = new Set(selectedStudents);
+                          if (e.target.checked) {
+                            next.add(student.id);
+                          } else {
+                            next.delete(student.id);
+                          }
+                          setSelectedStudents(next);
+                        }}
+                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                      />
+                    </td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.roll_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.prn_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{student.name}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => toggleStatus(student.id, RECORD_STATUS.PRESENT)}
-                          disabled={isSaving}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
-                            status === RECORD_STATUS.PRESENT
-                              ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
-                              : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
-                          }`}
-                        >
-                          {isSaving ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-                          ) : (
-                            <Icon d={Icons.check} className="h-3 w-3" />
-                          )}
-                          Present
-                        </button>
-                        <button
-                          onClick={() => toggleStatus(student.id, RECORD_STATUS.ABSENT)}
-                          disabled={isSaving}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
-                            status === RECORD_STATUS.ABSENT
-                              ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-300'
-                              : 'bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-700'
-                          }`}
-                        >
-                          {isSaving ? (
-                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-                          ) : (
-                            <Icon d={Icons.x} className="h-3 w-3" />
-                          )}
-                          Absent
-                        </button>
-                        {status === RECORD_STATUS.OD && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-300">
-                            OD
-                          </span>
+                        {status === RECORD_STATUS.OD ? (
+                          <button
+                            onClick={() => toggleStatus(student.id, RECORD_STATUS.ABSENT)}
+                            disabled={isSaving}
+                            className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-300 transition hover:bg-amber-200 disabled:opacity-50"
+                          >
+                            {isSaving ? (
+                              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+                            ) : null}
+                            ON DUTY
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => toggleStatus(student.id, RECORD_STATUS.PRESENT)}
+                              disabled={isSaving}
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
+                                status === RECORD_STATUS.PRESENT
+                                  ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
+                                  : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
+                              }`}
+                            >
+                              {isSaving ? (
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                              ) : (
+                                <Icon d={Icons.check} className="h-3 w-3" />
+                              )}
+                              Present
+                            </button>
+                            <button
+                              onClick={() => toggleStatus(student.id, RECORD_STATUS.ABSENT)}
+                              disabled={isSaving}
+                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
+                                status === RECORD_STATUS.ABSENT
+                                  ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-300'
+                                  : 'bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-700'
+                              }`}
+                            >
+                              {isSaving ? (
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
+                              ) : (
+                                <Icon d={Icons.x} className="h-3 w-3" />
+                              )}
+                              Absent
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
