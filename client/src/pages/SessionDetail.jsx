@@ -96,7 +96,7 @@ export default function SessionDetail() {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-end">
+      <div className="mt-4 mb-4 flex items-center justify-end">
         {odMode ? (
           <div className="flex items-center gap-2">
             <button
