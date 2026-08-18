@@ -120,12 +120,26 @@ export default function SessionDetail() {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setOdMode(true)}
-            className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
-          >
-            Mark Students OD
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                for (const { student, status } of list) {
+                  if (status !== RECORD_STATUS.PRESENT) {
+                    await toggleStatus(student.id, RECORD_STATUS.PRESENT);
+                  }
+                }
+              }}
+              className="btn-secondary border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+            >
+              Mark All Present
+            </button>
+            <button
+              onClick={() => setOdMode(true)}
+              className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+            >
+              Mark Students OD
+            </button>
+          </div>
         )}
       </div>
 
