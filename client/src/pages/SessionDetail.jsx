@@ -94,6 +94,22 @@ export default function SessionDetail() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Students</h2>
+        <button
+          onClick={() => {
+            for (const { student, status } of list) {
+              if (status !== RECORD_STATUS.PRESENT && status !== RECORD_STATUS.ABSENT) continue;
+              if (status !== RECORD_STATUS.ABSENT) continue;
+              toggleStatus(student.id, RECORD_STATUS.OD);
+            }
+          }}
+          className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+        >
+          Mark Absent Students OD
+        </button>
+      </div>
+
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -149,6 +165,11 @@ export default function SessionDetail() {
                           )}
                           Absent
                         </button>
+                        {status === RECORD_STATUS.OD && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-300">
+                            OD
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
