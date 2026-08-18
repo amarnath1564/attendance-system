@@ -135,27 +135,7 @@ export default function SessionDetail() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">
-                  {odMode ? (
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.size === list.length && list.length > 0}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedStudents(new Set(list.map(({ student }) => student.id)));
-                          } else {
-                            setSelectedStudents(new Set());
-                          }
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                      />
-                      Roll Number
-                    </label>
-                  ) : (
-                    'Roll Number'
-                  )}
-                </th>
+                <th className="px-4 py-3">Roll Number</th>
                 <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
                 <th className="px-4 py-3">Student</th>
@@ -169,7 +149,7 @@ export default function SessionDetail() {
                   <tr key={student.id} className="hover:bg-slate-50/60">
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
                       {odMode ? (
-                        <label className="flex items-center gap-3 cursor-pointer">
+                        <label className="flex items-center gap-4 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={selectedStudents.has(student.id)}
