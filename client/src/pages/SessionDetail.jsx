@@ -19,6 +19,7 @@ export default function SessionDetail() {
   const [localStatuses, setLocalStatuses] = useState({});
   const [saving, setSaving] = useState(null);
   const [selectedStudents, setSelectedStudents] = useState(new Set());
+  const [odMode, setOdMode] = useState(false);
 
   const effectiveRecords = useMemo(() => {
     if (!records) return {};
@@ -97,18 +98,36 @@ export default function SessionDetail() {
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold uppercase tracking-wide text-slate-600">Students</h2>
-        <button
-          onClick={async () => {
-            for (const studentId of selectedStudents) {
-              await toggleStatus(studentId, RECORD_STATUS.OD);
-            }
-            setSelectedStudents(new Set());
-          }}
-          disabled={selectedStudents.size === 0}
-          className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Mark Selected OD {selectedStudents.size > 0 && `(${selectedStudents.size})`}
-        </button>
+        {odMode ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setOdMode(false); setSelectedStudents(new Set()); }}
+              className="btn-secondary text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={async () => {
+                for (const studentId of selectedStudents) {
+                  await toggleStatus(studentId, RECORD_STATUS.OD);
+                }
+                setSelectedStudents(new Set());
+                setOdMode(false);
+              }}
+              disabled={selectedStudents.size === 0}
+              className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Mark Selected OD {selectedStudents.size > 0 && `(${selectedStudents.size})`}
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setOdMode(true)}
+            className="btn-secondary border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100"
+          >
+            Mark Students OD
+          </button>
+        )}
       </div>
 
       <div className="card overflow-hidden">
@@ -116,20 +135,22 @@ export default function SessionDetail() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3 w-10">
-                  <input
-                    type="checkbox"
-                    checked={selectedStudents.size === list.length && list.length > 0}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedStudents(new Set(list.map(({ student }) => student.id)));
-                      } else {
-                        setSelectedStudents(new Set());
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                  />
-                </th>
+                {odMode && (
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={selectedStudents.size === list.length && list.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStudents(new Set(list.map(({ student }) => student.id)));
+                        } else {
+                          setSelectedStudents(new Set());
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </th>
+                )}
                 <th className="px-4 py-3">Roll Number</th>
                 <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
@@ -142,22 +163,24 @@ export default function SessionDetail() {
                 const isSaving = saving === student.id;
                 return (
                   <tr key={student.id} className="hover:bg-slate-50/60">
-                    <td className="px-4 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedStudents.has(student.id)}
-                        onChange={(e) => {
-                          const next = new Set(selectedStudents);
-                          if (e.target.checked) {
-                            next.add(student.id);
-                          } else {
-                            next.delete(student.id);
-                          }
-                          setSelectedStudents(next);
-                        }}
-                        className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                      />
-                    </td>
+                    {odMode && (
+                      <td className="px-4 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.has(student.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedStudents);
+                            if (e.target.checked) {
+                              next.add(student.id);
+                            } else {
+                              next.delete(student.id);
+                            }
+                            setSelectedStudents(next);
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.roll_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.prn_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
