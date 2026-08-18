@@ -25,7 +25,7 @@ function SessionRow({ session, klass, counts, sessionLabel }) {
       <div className="min-w-0 flex-1">
         <p className="font-bold text-slate-900">{sessionLabel || formatDate(day)}</p>
         <p className="text-sm text-slate-500">
-          {counts.present} / {counts.total} present
+          {counts.present}P {counts.od > 0 ? `/ ${counts.od}OD ` : ''}/ {counts.total}
         </p>
       </div>
       <div className="flex items-center gap-3">
@@ -97,6 +97,7 @@ export default function AttendanceHistory() {
           total: total ?? recs.length,
           present: recs.filter((r) => r.status === RECORD_STATUS.PRESENT).length,
           absent: recs.filter((r) => r.status === RECORD_STATUS.ABSENT).length,
+          od: recs.filter((r) => r.status === RECORD_STATUS.OD).length,
         },
       };
     });

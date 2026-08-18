@@ -13,6 +13,7 @@ export const SESSION_STATUS = {
 export const RECORD_STATUS = {
   PRESENT: 'present',
   ABSENT: 'absent',
+  OD: 'od',
 };
 
 const db = new Dexie('attendit_db');

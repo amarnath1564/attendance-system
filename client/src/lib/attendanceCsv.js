@@ -52,7 +52,7 @@ export function buildAttendanceMatrixCsv(klass, students, sessions, recordsBySes
     for (const session of completed) {
       const records = recordsBySession?.[session.id];
       const record = records ? records.find((r) => r.student_id === student.id) : undefined;
-      row.push(record ? (record.status === 'present' ? 'P' : 'A') : '');
+      row.push(record ? (record.status === 'present' ? 'P' : record.status === 'od' ? 'OD' : 'A') : '');
     }
     rows.push(row);
   }
@@ -70,7 +70,7 @@ export function buildSessionAttendanceCsv(klass, session, students, recordMap) {
       student.application_number,
       student.roll_number,
       student.name,
-      status === 'present' ? 'Present' : status === 'absent' ? 'Absent' : 'Not marked',
+      status === 'present' ? 'Present' : status === 'od' ? 'OD' : status === 'absent' ? 'Absent' : 'Not marked',
     ]);
   }
   const stamp = sanitize(dateLabel(session.date).replace(/,/g, ''));

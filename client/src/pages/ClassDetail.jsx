@@ -170,6 +170,8 @@ export default function ClassDetail() {
       const sessionRecords = attendanceRecords?.[lastSession.id] || [];
       lastPresent = sessionRecords.filter((record) => record.status === RECORD_STATUS.PRESENT).length;
       lastAbsent = sessionRecords.filter((record) => record.status === RECORD_STATUS.ABSENT).length;
+      const lastOd = sessionRecords.filter((record) => record.status === RECORD_STATUS.OD).length;
+      lastPresent += lastOd;
       lastSessionDate = lastSession.date;
     }
 
@@ -177,7 +179,7 @@ export default function ClassDetail() {
       let present = 0;
       for (const session of completedSessions) {
         const record = (attendanceRecords?.[session.id] || []).find((record) => record.student_id === student.id);
-        if (record?.status === RECORD_STATUS.PRESENT) present += 1;
+        if (record?.status === RECORD_STATUS.PRESENT || record?.status === RECORD_STATUS.OD) present += 1;
       }
       return {
         student,
@@ -219,9 +221,10 @@ export default function ClassDetail() {
     const sessionCounts = completedSessions.map((session) => {
       const records = attendanceRecords?.[session.id] || [];
       const present = records.filter((r) => r.status === RECORD_STATUS.PRESENT).length;
+      const od = records.filter((r) => r.status === RECORD_STATUS.OD).length;
       const absent = records.filter((r) => r.status === RECORD_STATUS.ABSENT).length;
-      const total = present + absent;
-      return { session, present, absent, total, rate: total ? (present / total) * 100 : 0 };
+      const total = present + od + absent;
+      return { session, present: present + od, absent, total, rate: total ? ((present + od) / total) * 100 : 0 };
     });
 
     const sorted = [...sessionCounts].sort((a, b) => a.rate - b.rate);
@@ -236,7 +239,7 @@ export default function ClassDetail() {
       if (!dayCounts[name]) dayCounts[name] = { count: 0, totalPresent: 0 };
       dayCounts[name].count++;
       const records = attendanceRecords?.[s.id] || [];
-      dayCounts[name].totalPresent += records.filter((r) => r.status === RECORD_STATUS.PRESENT).length;
+      dayCounts[name].totalPresent += records.filter((r) => r.status === RECORD_STATUS.PRESENT || r.status === RECORD_STATUS.OD).length;
     }
     const bestDay = Object.entries(dayCounts)
       .map(([day, v]) => ({ day, rate: v.count ? (v.totalPresent / v.count) : 0 }))

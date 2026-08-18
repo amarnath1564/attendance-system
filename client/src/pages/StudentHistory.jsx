@@ -26,7 +26,7 @@ export default function StudentHistory() {
     );
   }
 
-  const presentCount = attendance ? attendance.filter((a) => a.status === RECORD_STATUS.PRESENT).length : 0;
+  const presentCount = attendance ? attendance.filter((a) => a.status === RECORD_STATUS.PRESENT || a.status === RECORD_STATUS.OD).length : 0;
   const total = attendance?.length || 0;
   const pct = total ? ((presentCount / total) * 100).toFixed(0) : '0';
 

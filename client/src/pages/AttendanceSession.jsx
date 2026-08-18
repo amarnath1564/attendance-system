@@ -45,6 +45,9 @@ function Legend({ dark = false }) {
         <KeyCap dark={dark}>A</KeyCap> <span className="text-slate-400">→</span> Absent
       </span>
       <span className="flex items-center gap-1.5">
+        <KeyCap dark={dark}>O</KeyCap> <span className="text-slate-400">→</span> OD
+      </span>
+      <span className="flex items-center gap-1.5">
         <KeyCap dark={dark}>→</KeyCap> / <KeyCap dark={dark}>Next</KeyCap> <span className="text-slate-400">→</span> Present + Forward
       </span>
       <span className="flex items-center gap-1.5">
@@ -113,7 +116,14 @@ export default function AttendanceSession() {
     () => (records ? Object.values(records).filter((r) => r.status === RECORD_STATUS.PRESENT).length : 0),
     [records]
   );
-  const absentCount = markedCount - presentCount;
+  const absentCount = useMemo(
+    () => (records ? Object.values(records).filter((r) => r.status === RECORD_STATUS.ABSENT).length : 0),
+    [records]
+  );
+  const odCount = useMemo(
+    () => (records ? Object.values(records).filter((r) => r.status === RECORD_STATUS.OD).length : 0),
+    [records]
+  );
   const total = students?.length || 0;
   const remaining = Math.max(0, total - markedCount);
 
@@ -222,6 +232,8 @@ export default function AttendanceSession() {
         mark(RECORD_STATUS.PRESENT);
       } else if (e.key === 'a' || e.key === 'A') {
         mark(RECORD_STATUS.ABSENT);
+      } else if (e.key === 'o' || e.key === 'O') {
+        mark(RECORD_STATUS.OD);
       } else if (e.key === 'Backspace' || e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         goPrevious();
       } else if (presentationMode && e.key === 'Escape') {
@@ -506,18 +518,25 @@ export default function AttendanceSession() {
             <p className="mt-3 text-lg font-semibold text-slate-500">Roll No: {current?.roll_number || '—'}</p>
             {records[current?.id] && (
               <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-1.5 text-sm font-bold text-slate-600">
-                Already marked {records[current.id].status === RECORD_STATUS.PRESENT ? 'Present' : 'Absent'} — Next continues
+                Already marked {records[current.id].status === RECORD_STATUS.PRESENT ? 'Present' : records[current.id].status === RECORD_STATUS.OD ? 'OD' : 'Absent'} — Next continues
               </p>
             )}
           </div>
 
-          <div className="mb-6 grid grid-cols-3 gap-3">
+          <div className="mb-6 grid grid-cols-4 gap-3">
             <CountPill label="Present" value={presentCount} tone="text-emerald-600" />
             <CountPill label="Absent" value={absentCount} tone="text-rose-600" />
+            <CountPill label="OD" value={odCount} tone="text-amber-600" />
             <CountPill label="Remaining" value={remaining} tone="text-slate-700" />
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <button
+              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
+              className="rounded-2xl bg-emerald-600 py-5 text-2xl font-bold text-white hover:bg-emerald-700 active:bg-emerald-800"
+            >
+              Present
+            </button>
             <button
               onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.ABSENT); }}
               className="btn-danger rounded-2xl py-5 text-2xl font-bold"
@@ -525,10 +544,10 @@ export default function AttendanceSession() {
               Absent
             </button>
             <button
-              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.PRESENT); }}
-              className="btn rounded-2xl bg-emerald-600 py-5 text-2xl font-bold text-white hover:bg-emerald-700 active:bg-emerald-800"
+              onClick={(e) => { e.currentTarget.blur(); mark(RECORD_STATUS.OD); }}
+              className="rounded-2xl bg-amber-500 py-5 text-2xl font-bold text-white hover:bg-amber-600 active:bg-amber-700"
             >
-              {index === students.length - 1 ? 'Next & Finish ✓' : 'Next ✓'}
+              OD
             </button>
           </div>
 

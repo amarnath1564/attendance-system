@@ -40,11 +40,19 @@ export default function AttendanceReview() {
 
   const present = useMemo(() => list.filter((x) => x.status === RECORD_STATUS.PRESENT).length, [list]);
   const absent = useMemo(() => list.filter((x) => x.status === RECORD_STATUS.ABSENT).length, [list]);
-  const pct = list.length ? ((present / list.length) * 100).toFixed(1) : '0.0';
+  const odCount = useMemo(() => list.filter((x) => x.status === RECORD_STATUS.OD).length, [list]);
+  const pct = list.length ? (((present + odCount) / list.length) * 100).toFixed(1) : '0.0';
 
   const toggle = async (studentId) => {
     const current = records?.[studentId]?.status;
-    const next = current === RECORD_STATUS.PRESENT ? RECORD_STATUS.ABSENT : RECORD_STATUS.PRESENT;
+    let next;
+    if (!current || current === RECORD_STATUS.ABSENT) {
+      next = RECORD_STATUS.PRESENT;
+    } else if (current === RECORD_STATUS.PRESENT) {
+      next = RECORD_STATUS.OD;
+    } else {
+      next = RECORD_STATUS.ABSENT;
+    }
     await upsertRecord(session.id, studentId, next);
   };
 
@@ -82,7 +90,7 @@ export default function AttendanceReview() {
         </p>
       </div>
 
-      <div className="mb-6 grid grid-cols-3 gap-3">
+      <div className="mb-6 grid grid-cols-4 gap-3">
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-emerald-600">{present}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Present</p>
@@ -90,6 +98,10 @@ export default function AttendanceReview() {
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-rose-600">{absent}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Absent</p>
+        </div>
+        <div className="card p-4 text-center">
+          <p className="text-2xl font-black text-amber-600">{odCount}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">OD</p>
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-slate-900">{pct}%</p>
@@ -121,6 +133,15 @@ export default function AttendanceReview() {
                     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
                       <Icon d={Icons.check} className="h-3.5 w-3.5" /> Present
                     </span>
+                  ) : status === RECORD_STATUS.OD ? (
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                        <Icon d={Icons.check} className="h-3.5 w-3.5" /> OD
+                      </span>
+                      <button className="btn-secondary px-2 py-1 text-[11px]" onClick={() => toggle(student.id)}>
+                        Change to Absent
+                      </button>
+                    </div>
                   ) : status === RECORD_STATUS.ABSENT ? (
                     <div className="flex items-center gap-2">
                       <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
