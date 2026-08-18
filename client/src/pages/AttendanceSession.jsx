@@ -45,9 +45,6 @@ function Legend({ dark = false }) {
         <KeyCap dark={dark}>A</KeyCap> <span className="text-slate-400">→</span> Absent
       </span>
       <span className="flex items-center gap-1.5">
-        <KeyCap dark={dark}>O</KeyCap> <span className="text-slate-400">→</span> OD
-      </span>
-      <span className="flex items-center gap-1.5">
         <KeyCap dark={dark}>→</KeyCap> / <KeyCap dark={dark}>Next</KeyCap> <span className="text-slate-400">→</span> Present + Forward
       </span>
       <span className="flex items-center gap-1.5">
@@ -555,6 +552,24 @@ export default function AttendanceSession() {
             </button>
             <button className="btn-secondary px-6" onClick={undoLast} disabled={actions.length === 0}>
               <Icon d={Icons.undo} className="h-4 w-4" /> Undo
+            </button>
+            <button
+              className="rounded-xl border border-emerald-300 bg-emerald-50 px-6 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100"
+              onClick={async () => {
+                if (!students || !session) return;
+                let count = 0;
+                for (const s of students) {
+                  if (records?.[s.id]) continue;
+                  try {
+                    await upsertRecord(session.id, s.id, RECORD_STATUS.PRESENT);
+                    count += 1;
+                  } catch (_) {}
+                }
+                setIndex(students.length - 1);
+                pushToast({ type: 'success', title: 'Marked all present', message: `${count} student${count === 1 ? '' : 's'} marked present.` });
+              }}
+            >
+              Mark All Present
             </button>
             <button className="btn-ghost px-6" onClick={startPresentation}>
               Presentation mode
