@@ -135,6 +135,7 @@ export default function SessionDetail() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
               <tr>
+                {odMode && <th className="px-4 py-3 w-10"></th>}
                 <th className="px-4 py-3">Roll Number</th>
                 <th className="px-4 py-3">PRN No.</th>
                 <th className="px-4 py-3">Application Number</th>
@@ -147,29 +148,25 @@ export default function SessionDetail() {
                 const isSaving = saving === student.id;
                 return (
                   <tr key={student.id} className="hover:bg-slate-50/60">
-                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">
-                      {odMode ? (
-                        <label className="flex items-center gap-4 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedStudents.has(student.id)}
-                            onChange={(e) => {
-                              const next = new Set(selectedStudents);
-                              if (e.target.checked) {
-                                next.add(student.id);
-                              } else {
-                                next.delete(student.id);
-                              }
-                              setSelectedStudents(next);
-                            }}
-                            className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                          />
-                          {student.roll_number}
-                        </label>
-                      ) : (
-                        student.roll_number
-                      )}
-                    </td>
+                    {odMode && (
+                      <td className="px-4 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedStudents.has(student.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedStudents);
+                            if (e.target.checked) {
+                              next.add(student.id);
+                            } else {
+                              next.delete(student.id);
+                            }
+                            setSelectedStudents(next);
+                          }}
+                          className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                        />
+                      </td>
+                    )}
+                    <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.roll_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.prn_number}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{student.name}</td>
