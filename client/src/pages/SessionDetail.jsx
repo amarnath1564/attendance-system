@@ -35,11 +35,11 @@ export default function SessionDetail() {
 
   const present = list.filter((x) => x.status === RECORD_STATUS.PRESENT).length;
   const absent = list.filter((x) => x.status === RECORD_STATUS.ABSENT).length;
-  const odCount = list.filter((x) => x.status === RECORD_STATUS.OD).length;
   const notMarked = list.filter((x) => !x.status).length;
   const pct = list.length ? ((present / list.length) * 100).toFixed(1) : '0.0';
 
-  const setStudentStatus = async (studentId, newStatus) => {
+  const toggleStatus = async (studentId, currentStatus) => {
+    const newStatus = currentStatus === RECORD_STATUS.PRESENT ? RECORD_STATUS.ABSENT : RECORD_STATUS.PRESENT;
     setLocalStatuses((prev) => ({ ...prev, [studentId]: newStatus }));
     setSaving(studentId);
     try {
@@ -80,7 +80,7 @@ export default function SessionDetail() {
         </div>
       </div>
 
-      <div className="mt-6 mb-6 grid grid-cols-4 gap-3">
+      <div className="mt-6 mb-6 grid grid-cols-3 gap-3">
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-emerald-600">{present}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Present</p>
@@ -88,10 +88,6 @@ export default function SessionDetail() {
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-rose-600">{absent}</p>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Absent</p>
-        </div>
-        <div className="card p-4 text-center">
-          <p className="text-2xl font-black text-amber-600">{odCount}</p>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">OD</p>
         </div>
         <div className="card p-4 text-center">
           <p className="text-2xl font-black text-slate-900">{pct}%</p>
@@ -121,44 +117,43 @@ export default function SessionDetail() {
                     <td className="px-4 py-2.5 font-mono text-xs text-slate-600">{student.application_number}</td>
                     <td className="px-4 py-2.5 font-medium text-slate-900">{student.name}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
+                      {status === RECORD_STATUS.PRESENT ? (
                         <button
-                          onClick={() => setStudentStatus(student.id, RECORD_STATUS.PRESENT)}
+                          onClick={() => toggleStatus(student.id, status)}
                           disabled={isSaving}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
-                            status === RECORD_STATUS.PRESENT
-                              ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300'
-                              : 'bg-slate-100 text-slate-500 hover:bg-emerald-50 hover:text-emerald-700'
-                          }`}
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
                         >
-                          {isSaving && status !== RECORD_STATUS.PRESENT ? null : <Icon d={Icons.check} className="h-3 w-3" />}
-                          Present
+                          {isSaving ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent" />
+                          ) : (
+                            <Icon d={Icons.check} className="h-3.5 w-3.5" />
+                          )} Present
                         </button>
+                      ) : status === RECORD_STATUS.ABSENT ? (
                         <button
-                          onClick={() => setStudentStatus(student.id, RECORD_STATUS.ABSENT)}
+                          onClick={() => toggleStatus(student.id, status)}
                           disabled={isSaving}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
-                            status === RECORD_STATUS.ABSENT
-                              ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-300'
-                              : 'bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-700'
-                          }`}
+                          className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
                         >
-                          {isSaving && status !== RECORD_STATUS.ABSENT ? null : <Icon d={Icons.x} className="h-3 w-3" />}
-                          Absent
+                          {isSaving ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-600 border-t-transparent" />
+                          ) : (
+                            <Icon d={Icons.x} className="h-3.5 w-3.5" />
+                          )} Absent
                         </button>
-                        {status === RECORD_STATUS.ABSENT && (
-                          <button
-                            onClick={() => setStudentStatus(student.id, RECORD_STATUS.OD)}
-                            disabled={isSaving}
-                            className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 transition hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"
-                          >
-                            OD
-                          </button>
-                        )}
-                        {isSaving && (
-                          <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-                        )}
-                      </div>
+                      ) : (
+                        <button
+                          onClick={() => toggleStatus(student.id, status)}
+                          disabled={isSaving}
+                          className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
+                        >
+                          {isSaving ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-500 border-t-transparent" />
+                          ) : (
+                            'Not marked'
+                          )}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
